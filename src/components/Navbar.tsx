@@ -1,6 +1,3 @@
-import Button from "./Button";
-import NavLink from "./NavLink";
-
 import gojoImage from "../assets/images/gojo.jpg";
 import { useNavigate } from "react-router-dom";
 import { TwitterIcon } from "../icons/TwitterIcon";
@@ -42,7 +39,7 @@ function Navbar() {
 
           </div>
         <div className="flex flex-row flex-nowrap items-center gap-5 ">
-            <a href={whatappRedirectUrl}>
+            <a href={whatappRedirectUrl} target="_blank" rel="noopener noreferrer">
               <button className={`py-1.5 px-3.5 bg-(--button) text-(--home-bg) cursor-pointer rounded-lg text-[13px] flex flex-row items-center justify-items-center gap-1`}>
                <WhatsAppIcon />
                 WhatsApp
