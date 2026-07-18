@@ -1,0 +1,58 @@
+@import "tailwindcss";
+
+:root {
+    --maxw: 920px;
+    --home-bg: #0E0E0E;
+
+    --navbar-bg: rgba(14,14,14,0.82);
+    --navbar-border: #191918;
+    --navbar-link: #A3A29C;
+    --avatar-text: #6E6D68;
+    --line: #262626;
+    --line-soft: #222220;
+    --button: #F5F5F2;
+
+    --gold: #FAC775;
+    --gold-deep: #EF9F27;
+    --gold-bg: #2E2312;
+    --green: #5DCAA5;
+    --green-fg: #9FE1CB;
+    --green-bg : #14231C;
+
+    --card: #131311;
+    --card-2: #171716;
+
+}
+
+@font-face {
+  font-family: "Inter";
+  src: url("./assets/fonts/InterVariable.woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Inter";
+  src: url("./assets/fonts/InterVariable-Italic.woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Space Grotesk";
+  src: url("./assets/fonts/SpaceGrotesk-VariableFont_wght.ttf")
+    format("truetype");
+  font-weight: 300 700; /* Variable font range */
+  font-style: normal;
+}
+
+body {
+  font-family: "Inter", system-ui, sans-serif;
+  color: var(--button);
+}
+
+.font-space {
+  font-family: "Space Grotesk", "Inter", sans-serif;
+}
