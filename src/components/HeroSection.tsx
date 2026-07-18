@@ -1,4 +1,5 @@
 import me from "../assets/images/me.jpeg"
+import resume from "../assets/resume.pdf"
 import Button from "./Button";
 
 function HeroSection() {
@@ -26,8 +27,9 @@ function BioSection() {
       <div className="mb-5.5 max-w-105 text-(--navbar-link) leading-relaxed">I build high-throughput backend systems in Go and Python. Most recently cut API p99 latency by 60% for a platform serving 2M daily users at Finlay.</div>
       <div className="flex flex-row gap-3">
         <Button styling="py-2.5 px-4.5" text="View my work" />
+        <a href={resume} download="Samarth_Negi_Resume.pdf">
         <Button styling="py-2.5 px-4.5" colorTheme="text-(--button) bg-transparent border-[0.5px] border-[#3A3936]" text="↓ Resume" />
-
+</a>
       </div>
 
     </div>
