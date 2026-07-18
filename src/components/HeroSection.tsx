@@ -29,7 +29,7 @@ function BioSection() {
         <Button styling="py-2.5 px-4.5" text="View my work" />
         <a href={resume} download="Samarth_Negi_Resume.pdf">
         <Button styling="py-2.5 px-4.5" colorTheme="text-(--button) bg-transparent border-[0.5px] border-[#3A3936]" text="↓ Resume" />
-</a>
+        </a>
       </div>
 
     </div>
