@@ -7,28 +7,28 @@ type Project = {
 }
 
 export const projects: Project[] = [{
-  title: "Ledgerlite",
-  description: "Double-entry accounting API for fintech startups. Sub-10ms reads.",
-  stack: ["Python", "Postgres"],
-  github: "www.github.com/Sam-Frost",
-  liveLink: "www.sat0ru.dev"
+  title: "Brocode Crypto Exchange",
+  description: "Centralized Cryptocoin Exchange supporting spots & perpetuals.",
+  stack: ["Golang", "Kafka", "kubernetes", "Postgres"],
+  github: "https://www.github.com/Sam-Frost",
+  liveLink: "https://exchange.sat0ru.dev"
 },
 {
-  title: "Ledgerlite",
+  title: "Coding Agent",
   description: "Double-entry accounting API for fintech startups. Sub-10ms reads.",
-  stack: ["Python", "Postgres"],
-  github: "www.github.com/Sam-Frost",
-  liveLink: "www.sat0ru.dev"
+  stack: ["Golang", "Sqlite"],
+  github: "https://github.com/Sam-Frost/Brocode-Exchange-Backend",
+  liveLink: "https://codex.sat0ru.dev"
 },{
-  title: "Ledgerlite",
-  description: "Double-entry accounting API for fintech startups. Sub-10ms reads.",
-  stack: ["Python", "Postgres"],
-  github: "www.github.com/Sam-Frost",
-  liveLink: "www.sat0ru.dev"
+  title: "Shadow-Link",
+  description: "Custom VPN built in golang.",
+  stack: ["Golang"],
+  github: "https://github.com/Sam-Frost/Shadow-Link",
+  liveLink: "https://shadowLink.sat0ru.dev"
 },{
-  title: "Ledgerlite",
-  description: "Double-entry accounting API for fintech startups. Sub-10ms reads.",
-  stack: ["Python", "Postgres"],
-  github: "www.github.com/Sam-Frost",
-  liveLink: "www.sat0ru.dev"
+  title: "BastionX",
+  description: "Custom SSH implementation in golang.",
+  stack: ["Golang"],
+  github: "https://github.com/Sam-Frost/BastionX",
+  liveLink: "https://bastionx.sat0ru.dev"
 }]

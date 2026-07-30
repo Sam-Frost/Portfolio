@@ -38,14 +38,14 @@ function Navbar() {
             <Toast message="Email copied to clipboard!" show={emailCopied} onClose={() => setEmailCopied(false)} />
 
           </div>
-        <div className="flex flex-row flex-nowrap items-center gap-5 ">
+        {/*<div className="flex flex-row flex-nowrap items-center gap-5 ">
             <a href={whatappRedirectUrl} target="_blank" rel="noopener noreferrer">
               <button className={`py-1.5 px-3.5 bg-(--button) text-(--home-bg) cursor-pointer rounded-lg text-[13px] flex flex-row items-center justify-items-center gap-1`}>
                <WhatsAppIcon />
                 WhatsApp
               </button>
             </a>
-        </div>
+        </div>*/}
       </div>
       </div>
     </div>

@@ -35,9 +35,14 @@ function ProjectSkill({ skill } : {skill : string}) {
 
 function ProjectLinks({text, link} : {text: string, link: string}) {
   return (
-    <div className="font-medium text-[13px] text-(--gold) hover:text-(--gold-deep) cursor-pointer " onClick={() => {
-      console.log(`Redirect to ${link}`)
-    }}>{text}</div>
+    <a
+      className="font-medium text-[13px] text-(--gold) hover:text-(--gold-deep) cursor-pointer"
+      href={link}
+      target="_blank"
+      rel="noopener noreferrer"
+    >
+      {text}
+    </a>
   )
 }
 
