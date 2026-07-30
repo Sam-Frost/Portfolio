@@ -57,3 +57,10 @@ body {
 .font-space {
   font-family: "Space Grotesk", "Inter", sans-serif;
 }
+
+.prose {
+  color: var(--navbar-link);
+}
+.prose :where(h1, h2, h3, h4) {
+  color: var(--button);
+}
