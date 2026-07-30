@@ -1,7 +1,8 @@
-import testBlog from "../assets/blogs/test-blog.md?raw"
+import imageBlurring from "../assets/blogs/image-bluring-at-client-vs-server.md?raw"
 
 type Blog = {
   title: string
+  fileName: string
   readTime: string
   genere: string
   date: string
@@ -9,23 +10,21 @@ type Blog = {
 }
 
 export const blogs: Blog[] = [{
-  title : "Test Blog but with a long TITLE.....",
-  readTime: "8 min read",
-  genere: "Databases",
-  date: "Jun 2026",
-  content : testBlog
+  title: "Image bluring at client vs server",
+  fileName: "image-bluring-at-client-vs-server",
+  readTime: "5 min read",
+  genere: "Backend",
+  date: "Dec 2024",
+  content: imageBlurring
 },
-{
-  title : "Test Blog but with a long TITLE.....",
-  readTime: "8 min read",
-  genere: "Databases",
-  date: "Jun 2026",
-  content : testBlog
-  },
-  {
-    title : "Test Blog but with a long TITLE.....",
-    readTime: "8 min read",
-    genere: "Databases",
-    date: "Jun 2026",
-    content : testBlog
-  }]
+]
+
+
+export function getBlogData(fileName: string): string {
+  const blog = blogs.find(blog => blog.fileName == fileName)
+
+  if (!blog)
+    throw new Error(`Blog file does not exist for ${fileName}`)
+
+  return blog.content;
+}

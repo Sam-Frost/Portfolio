@@ -5,7 +5,7 @@ import Button from "./Button";
 function HeroSection() {
   return (
     <div className="pt-14 pb-10">
-      <div className="flex flex-row gap-10 justify-between">
+      <div className="flex flex-col sm:flex-row gap-6 sm:gap-10 justify-between">
         <BioSection />
         <AvatarSection />
       </div>
@@ -26,7 +26,6 @@ function BioSection() {
         <p className="mb-4 font-medium text-(--gold)">Backend engineer {"\u00b7"} distributed systems</p>
       <div className="mb-5.5 max-w-105 text-(--navbar-link) leading-relaxed">I build high-throughput backend systems in Go and Python. Most recently cut API p99 latency by 60% for a platform serving 2M daily users at Finlay.</div>
       <div className="flex flex-row gap-3">
-        {/*<Button styling="py-2.5 px-4.5" text="View my work" />*/}
         <a href={resume} download="Samarth_Negi_Resume.pdf">
         <Button styling="py-2.5 px-4.5" colorTheme="text-(--button) bg-transparent border-[0.5px] border-[#3A3936]" text="↓ Resume" />
         </a>
@@ -38,12 +37,12 @@ function BioSection() {
 
 function AvatarSection() {
   return (
-    <div>
+    <div className="flex flex-col items-center text-center sm:items-start sm:text-left">
       <div className="h-39.5 w-39.5 border-t-amber-700">
         <img className="h-full w-full rounded-full object-cover object-center" src={me}></img>
 
       </div>
-      <p className="text-xs mt-3 text-(--avatar-text)" >Delhi India {"\u00b7"} Remote-friendly</p>
+      <p className="text-xs mt-3 text-(--avatar-text)" >Delhi, India {"\u00b7"} Remote-friendly</p>
     </div>
   )
 }

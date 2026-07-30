@@ -4,14 +4,11 @@ import { TwitterIcon } from "../icons/TwitterIcon";
 import { GithubIcon } from "../icons/GithubIcon";
 import { LinkedinIcon } from "../icons/LinkedinIcon";
 import { MailIcon } from "../icons/MailIcon";
-import { WhatsAppIcon } from "../icons/WhatsAppIcon";
 import { social } from "../data/socials";
 import Toast from "./Toast";
 import { useState } from "react";
 
 function Navbar() {
-
-  const whatappRedirectUrl = `https://wa.me/${import.meta.env.VITE_PHONE_NUMBER}`;
 
   const navigate = useNavigate();
 
@@ -38,14 +35,6 @@ function Navbar() {
             <Toast message="Email copied to clipboard!" show={emailCopied} onClose={() => setEmailCopied(false)} />
 
           </div>
-        {/*<div className="flex flex-row flex-nowrap items-center gap-5 ">
-            <a href={whatappRedirectUrl} target="_blank" rel="noopener noreferrer">
-              <button className={`py-1.5 px-3.5 bg-(--button) text-(--home-bg) cursor-pointer rounded-lg text-[13px] flex flex-row items-center justify-items-center gap-1`}>
-               <WhatsAppIcon />
-                WhatsApp
-              </button>
-            </a>
-        </div>*/}
       </div>
       </div>
     </div>

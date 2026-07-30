@@ -5,8 +5,9 @@ function ProjectSection() {
   return (
     <div className="pb-11">
       <h2 className="text-xl font-space font-semibold tracking-[-0.4px] mb-4.5">Projects</h2>
-      <div className="grid grid-cols-2 gap-3">
-        {projects.map(project =><Project
+      <div className="grid sm:grid-cols-2 gap-3">
+        {projects.map((project, index) => <Project
+        key = {index}
         title = {project.title}
         description = {project.description}
         stack = {project.stack}

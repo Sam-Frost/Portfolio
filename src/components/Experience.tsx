@@ -1,7 +1,6 @@
 import { useState } from "react";
 
 interface Experience {
-  logo: string
   position: string
   company: string
   description: string
@@ -16,14 +15,9 @@ function Experience(props : Experience) {
 
   return (
     <div className="flex flex-row gap-4 pb-5.5">
-      <div className="flex flex-col items-center">
-        <div className="w-9 h-9 rounded-[9px] text-(--gold) bg-(--gold-bg) flex flex-col items-center justify-center">
-          {props.logo}
-        </div>
-      </div>
       <div className="grow shrink">
         <div
-          className="flex justify-between items-baseline gap-3 cursor-pointer"
+          className="flex flex-col sm:flex-row justify-between items-baseline gap-3 cursor-pointer"
           onClick={() => setIsOpen(!isOpen)}
         >
           <div className="text-sm font-medium flex flex-row items-center gap-1.5">
@@ -77,6 +71,8 @@ function Experience(props : Experience) {
             </div>
           </div>
         </div>
+
+        <hr className="mt-4 text-(--navbar-link) opacity-20"/>
       </div>
     </div>
   );

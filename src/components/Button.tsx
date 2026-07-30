@@ -13,7 +13,6 @@ function Button(props: ButtonProps) {
     <button className={`${colorTheme} ${props.styling} cursor-pointer rounded-lg text-[13px]`}>
       {props.text}
     </button>
-
     )
 }
 

@@ -11,6 +11,19 @@ type Experience = {
 
 export const experiences: Experience[] = [
   {
+    logo: "SL",
+    position: "Software Engineer",
+    company: "Saralya Tech Pvt. Ltd",
+    description:
+      "Built multi tenant LMS system from ground up, making lending easy for NBFCs",
+    details: [
+      "Handled DLT registration & setup, API Integration and mananing multi tentat DLT system with automated fallbacks",
+    ],
+    techStack: ["TypeScript", "NestJs", "PostgreSQL", "Redis", "Docker"],
+    startDate: "June 2026",
+    endDate: "Present",
+  },
+  {
     logo: "BT",
     position: "Associate Software Engineer",
     company: "BitxiaTech Pvt. Ltd.",

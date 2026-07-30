@@ -14,8 +14,8 @@ function Project(props: Project) {
       <div className="text-sm text-(--navbar-link) mb-3 max-w-110">{props.description}</div>
       <div className="flex flex-row justify-between items-center mt-2">
         <div className="flex flex-row gap-1.5 flex-wrap">
-          {props.stack.map(skill => {
-            return (<ProjectSkill skill={skill} />)
+          {props.stack.map((skill, index) => {
+            return (<ProjectSkill key={index} skill={skill} className={index >= 2 ? "hidden sm:block" : ""} />)
         })}
         </div>
         <div className="flex flex-row gap-2">
@@ -27,8 +27,8 @@ function Project(props: Project) {
   );
 }
 
-function ProjectSkill({ skill } : {skill : string}) {
-  return (<div className="text-[11px] bg-(--line-soft) py-0.75 px-2.5 rounded-xl text-(--navbar-link)">
+function ProjectSkill({ skill, className } : {skill : string, className?: string}) {
+  return (<div className={`text-[11px] bg-(--line-soft) py-0.75 px-2.5 rounded-xl text-(--navbar-link) ${className ?? ""}`}>
     {skill}
   </div>)
 }

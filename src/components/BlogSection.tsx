@@ -9,11 +9,14 @@ function BlogSection() {
         <div className="text-[13px] font-medium text-(--gold) cursor-pointer hover:text-(--gold-deep)">All Posts →</div>
       </div>
       <div>
-        {blogs.map(blog => <Blog
-          title = {blog.title}
-          readTime= {blog.readTime}
-          genere= {blog.genere}
-          date= {blog.date}
+        {blogs.map((blog, index) => <Blog
+          key={index}
+          title={blog.title}
+          fileName={blog.fileName}
+          readTime={blog.readTime}
+          genere={blog.genere}
+          date={blog.date}
+          content={blog.content}
         />)}
       </div>
     </div>

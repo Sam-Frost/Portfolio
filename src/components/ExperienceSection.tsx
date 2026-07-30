@@ -8,7 +8,6 @@ function ExperienceSection() {
       {experiences.map(experience =>
         <Experience
         key={experience.company}
-        logo = {experience.logo}
         position= {experience.position}
         company= {experience.company}
         description= {experience.description}
