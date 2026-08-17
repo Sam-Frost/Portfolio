@@ -10,14 +10,14 @@ export const projects: Project[] = [{
   title: "Brocode Crypto Exchange",
   description: "Centralized Cryptocoin Exchange supporting spots & perpetuals.",
   stack: ["Golang", "Kafka", "kubernetes", "Postgres"],
-  github: "https://www.github.com/Sam-Frost",
+  github: "https://github.com/Sam-Frost/Brocode-Exchange-Backend",
   liveLink: "https://exchange.sat0ru.dev"
 },
 {
   title: "Coding Agent",
   description: "Double-entry accounting API for fintech startups. Sub-10ms reads.",
   stack: ["Golang", "Sqlite"],
-  github: "https://github.com/Sam-Frost/Brocode-Exchange-Backend",
+  github: "https://github.com/Sam-Frost/Brocode-cli",
   liveLink: "https://codex.sat0ru.dev"
 },{
   title: "Shadow-Link",

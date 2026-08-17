@@ -16,7 +16,7 @@ export default function Toast({ message, show, duration = 800, onClose }: ToastP
 
   return (
     <div
-      className="fixed top-4 left-1/2 z-50 px-4 py-2 text-sm rounded-lg bg-(--card) text-(--navbar-link) shadow-lg transition-all duration-300 pointer-events-none"
+      className="fixed top-4 left-1/2 z-50 px-4 py-2 text-sm rounded-lg bg-(--card) text-(--text-muted) shadow-lg transition-all duration-300 pointer-events-none"
       style={{
         transform: `translateX(-50%) translateY(${show ? "0" : "-4rem"})`,
         opacity: show ? 1 : 0,

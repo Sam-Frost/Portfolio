@@ -18,9 +18,9 @@ function Blog(props: Blog) {
     }}>
       <div>
         <div className="font-medium text-sm">{props.title}</div>
-        <div className="text-xs mt-1 text-(--navbar-link)">{props.readTime} · {props.genere}</div>
+        <div className="text-xs mt-1 text-(--text-muted)">{props.readTime} · {props.genere}</div>
       </div>
-      <div className="text-xs text-(--navbar-link)">{props.date}</div>
+      <div className="text-xs text-(--text-muted)">{props.date}</div>
     </div>
   );
 }

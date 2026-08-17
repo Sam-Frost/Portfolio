@@ -20,7 +20,7 @@ export const Icon = ({
   children,
   ...props
 }: BaseIconProps) => (
-  <a className="hover:text-(--button)" href={props.href} target="_blank" rel="noopener noreferrer">
+  <a className="hover:text-(--fg)" href={props.href} target="_blank" rel="noopener noreferrer">
   <svg
     xmlns="http://www.w3.org/2000/svg"
     width={size}

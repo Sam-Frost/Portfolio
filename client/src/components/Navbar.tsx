@@ -19,12 +19,12 @@ function Navbar() {
     <div className="bg-(--navbar-bg) px-6 py-4 max-w-(--maxw) mx-auto ">
         <div className="flex flex-row items-center justify-between">
           <div className="flex flex-row items-center gap-2 cursor-pointer" onClick={() => { navigate("/")}}>
-              <div className="h-6.5 w-6.5 overflow-hidden rounded-lg bg-(--button) text-">
+              <div className="h-6.5 w-6.5 overflow-hidden rounded-lg bg-(--fg) text-">
               <img className="h-full w-full object-cover object-center" src={gojoImage}></img>
             </div>
             <div>sat0ru.dev</div>
           </div>
-          <div className="flex flex-row gap-4 text-(--navbar-link)">
+          <div className="flex flex-row gap-4 text-(--text-muted)">
             <TwitterIcon href={social.x} />
             <GithubIcon href={social.github} />
             <LinkedinIcon href={social.linkedin} />

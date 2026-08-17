@@ -8,9 +8,9 @@ interface ButtonProps {
 }
 
 function Button(props: ButtonProps) {
-    const colorTheme = props.colorTheme ?? "bg-(--button) text-(--home-bg)";
+    const colorTheme = props.colorTheme ?? "bg-(--fg) text-(--bg)";
   return (
-    <button className={`${colorTheme} ${props.styling} cursor-pointer rounded-lg text-[13px]`}>
+    <button className={`${colorTheme} ${props.styling} cursor-pointer rounded-lg text-[length:var(--text-caption)]`}>
       {props.text}
     </button>
     )
