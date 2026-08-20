@@ -1,0 +1,63 @@
+@import "tailwindcss";
+
+:root {
+    --maxw: 920px;
+    --bg: #0E0E0E;
+
+    --navbar-bg: rgba(14,14,14,0.82);
+    --text-muted: #A3A29C;
+    --text-faint: #6E6D68;
+    --line: #262626;
+    --line-soft: #222220;
+    --line-strong: #3A3936;
+    --fg: #F5F5F2;
+
+    --gold: #FAC775;
+    --gold-deep: #EF9F27;
+    --green: #5DCAA5;
+    --green-fg: #9FE1CB;
+    --green-bg : #14231C;
+
+    --card: #131311;
+    --card-alt: #171716;
+    --ring-track: #2A2A28;
+
+    --font-sans: "Inter", system-ui, sans-serif;
+    --font-space: "Space Grotesk", "Inter", sans-serif;
+
+    --text-pill: 11px;
+    --text-caption: 13px;
+}
+
+@font-face {
+  font-family: "Inter";
+  src: url("./assets/fonts/InterVariable.woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Inter";
+  src: url("./assets/fonts/InterVariable-Italic.woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Space Grotesk";
+  src: url("./assets/fonts/SpaceGrotesk-VariableFont_wght.ttf")
+    format("truetype");
+  font-weight: 300 700; /* Variable font range */
+  font-style: normal;
+}
+
+body {
+  font-family: var(--font-sans);
+  color: var(--fg);
+}
+
+.font-space {
+  font-family: var(--font-space);
+}

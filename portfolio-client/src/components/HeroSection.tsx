@@ -1,7 +1,12 @@
+import { useRef } from "react";
 import me from "../assets/images/me.jpeg"
 import resume from "../assets/resume.pdf"
 import Button from "./Button";
 import { homeData } from "../data/home";
+
+const ADMIN_UNLOCK_CLICKS = 7;
+const ADMIN_UNLOCK_WINDOW_MS = 20000;
+const DOMAIN_APP_URL = import.meta.env.VITE_DOMAIN_APP_URL ?? "https://domain.sat0ru.dev";
 
 function HeroSection() {
   return (
@@ -37,9 +42,31 @@ function BioSection() {
 }
 
 function AvatarSection() {
+  const clickCount = useRef(0);
+  const resetTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleAvatarClick = () => {
+    clickCount.current += 1;
+
+    if (clickCount.current >= ADMIN_UNLOCK_CLICKS) {
+      clickCount.current = 0;
+      if (resetTimer.current) clearTimeout(resetTimer.current);
+      window.location.href = DOMAIN_APP_URL;
+      return;
+    }
+
+    if (resetTimer.current) clearTimeout(resetTimer.current);
+    resetTimer.current = setTimeout(() => {
+      clickCount.current = 0;
+    }, ADMIN_UNLOCK_WINDOW_MS);
+  };
+
   return (
     <div className="flex flex-col items-center text-center sm:items-start sm:text-left">
-      <div className="h-39.5 w-39.5 border-t-amber-700">
+      <div
+        className="h-39.5 w-39.5 border-t-amber-700 cursor-pointer select-none"
+        onClick={handleAvatarClick}
+      >
         <img className="h-full w-full rounded-full object-cover object-center" src={me}></img>
 
       </div>
