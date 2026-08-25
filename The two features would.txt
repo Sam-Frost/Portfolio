@@ -1,0 +1,58 @@
+The two features would be sharing components of a notepad
+
+TODO Feature : 
+
+1. Option to add todo
+
+
+-------------------------------------------------------------------------------------------------------------
+
+Notepad Feature : 
+
+
+--------------------------------------------------------------------------------------------------------------
+
+Personal Dairy Feature :
+
+Frontend : 
+1. It opens up a calender for the month with each day/date showing. Upon clicking the calendar it will open the  view/edit window based on usecase.
+2. Have a shortcut button on top open today dairy entry
+
+
+
+Dairy View Window :
+This will open incase of the dairy has been published once, o
+Dairy Edit Window : 
+This will open in case of the added a new entry to the dairy
+
+Backend : 
+1. Create a schema for the dairy, there will be only one entry for a day
+2. Have a cron running for this, any dairy entry  which hasn't been updated for 36 hours is locked and then can't be edited
+
+--------------------------------------------------------------------------------------------------------------
+
+Hourly Tracker Feature : 
+- Notification each hour to log progress
+- Should progress of each day be stored
+--------------------------------------------------------------------------------------------------------------
+
+Daily Work Tracker Feature : 
+
+The Daily Work Tracker feature has multiple componentts:
+
+  Overview dashbord :
+  1. Bar Graph to show daily perforance of each day how I am able to work
+  2. A Pie chart showing three things hours worked, hours wasted, hours remaing,
+
+  Daily Tracking :
+    1. A button to start work session(I will add the time here in hours and minutes),
+  2. Once this work session starts create a tile which has the constant timmer runnig and this is a
+  floatable tile that can be moved anywhere in the application, i can change the page from sidebar
+  or somethign but this keeps running
+
+
+--------------------------------------------------------------------------------------------------------------
+
+Bad Habbit Tracker Feature : 
+
+Graph to see daily count

@@ -1,20 +1,39 @@
-import { createBrowserRouter, Navigate } from "react-router-dom";
+import { createBrowserRouter } from "react-router-dom";
 
 import { DomainExpansionPage } from "./pages/DomainExpansionPage";
+import { DomainErrorPage } from "./pages/DomainErrorPage";
+import { NotFoundPage } from "./pages/NotFoundPage";
 import { DomainLayout } from "./layouts/DomainLayout";
-import { CredentialManagerPage } from "./pages/CredentialManagerPage";
+import { RequireAuth } from "./features/auth/RequireAuth";
+import { CredentialManagerPage } from "./features/credentials/CredentialManagerPage";
+import { TodosPage } from "./features/todos/TodosPage";
+import { SettingsPage } from "./features/settings/SettingsPage";
 
 export const router = createBrowserRouter([
   {
     path: "/",
     element: <DomainExpansionPage />,
+    errorElement: <DomainErrorPage />,
   },
   {
-    path: "/dashboard",
-    element: <DomainLayout />,
+    element: <RequireAuth />,
+    errorElement: <DomainErrorPage />,
     children: [
-      { index: true, element: <Navigate to="credentials" replace /> },
-      { path: "credentials", element: <CredentialManagerPage /> },
+      {
+        element: <DomainLayout />,
+        children: [
+          { path: "credentials", element: <CredentialManagerPage /> },
+          {
+            path: "todos",
+            element: <TodosPage />,
+            handle: { title: "Todos" },
+          },
+          { path: "settings", element: <SettingsPage /> },
+        ],
+      },
     ],
   },
+  // Unmatched URL — outside RequireAuth so a bad link doesn't force a login
+  // redirect before showing the 404.
+  { path: "*", element: <NotFoundPage /> },
 ]);

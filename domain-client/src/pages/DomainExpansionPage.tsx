@@ -1,27 +1,33 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Button from "../components/Button";
-import { PUBLIC_SITE_URL } from "../config";
+import { login } from "../features/auth/api";
+import { setToken } from "../features/auth/token";
 
 export function DomainExpansionPage() {
   const navigate = useNavigate();
   const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    navigate("/dashboard");
+    setError(null);
+    setSubmitting(true);
+    try {
+      const token = await login(password);
+      setToken(token);
+      navigate("/todos");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Login failed, try again.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-(--bg) px-6">
       <div className="w-full max-w-sm">
-        <button
-          className="mb-6 text-[length:var(--text-caption)] text-(--text-muted) hover:text-(--fg) cursor-pointer"
-          onClick={() => { window.location.href = PUBLIC_SITE_URL; }}
-        >
-          ← Back to site
-        </button>
-
         <div className="bg-(--card) border-(--line) border-[0.5px] border-solid rounded-xl p-8">
           <div className="h-10 w-10 rounded-lg bg-(--card-alt) border-(--line) border-[0.5px] border-solid flex items-center justify-center mb-5">
             <LockIcon />
@@ -33,7 +39,9 @@ export function DomainExpansionPage() {
           <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
             <Field label="Password" type="password" value={password} onChange={setPassword} placeholder="••••••••" />
 
-            <Button styling="w-full py-2.5 mt-2" text="Access" />
+            {error && <p className="text-[length:var(--text-caption)] text-red-400">{error}</p>}
+
+            <Button styling="w-full py-2.5 mt-2" text={submitting ? "Checking..." : "Access"} disabled={submitting} />
           </form>
         </div>
 

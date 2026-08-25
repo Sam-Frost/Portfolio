@@ -22,6 +22,17 @@
     --card-alt: #171716;
     --ring-track: #2A2A28;
 
+    /* Preset label swatches (todos labels) — muted tones pitched to sit on
+       the dark card/bg surfaces alongside --gold/--green. */
+    --label-red: #E8746B;
+    --label-orange: #F0A560;
+    --label-yellow: #E8C468;
+    --label-green: #7FCB8F;
+    --label-teal: #5FBFB3;
+    --label-blue: #6FA8DC;
+    --label-purple: #A78BC9;
+    --label-pink: #D992B5;
+
     --font-sans: "Inter", system-ui, sans-serif;
     --font-space: "Space Grotesk", "Inter", sans-serif;
 
@@ -60,4 +71,31 @@ body {
 
 .font-space {
   font-family: var(--font-space);
+}
+
+/* Themed scrollbar for internally-scrolling regions (e.g. the todos list) —
+   the default OS scrollbar doesn't match the dark UI. */
+.themed-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-strong) transparent;
+}
+
+.themed-scrollbar::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.themed-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.themed-scrollbar::-webkit-scrollbar-thumb {
+  background-color: var(--line-strong);
+  border-radius: 9999px;
+  border: 2px solid var(--bg);
+  background-clip: padding-box;
+}
+
+.themed-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: var(--text-faint);
 }

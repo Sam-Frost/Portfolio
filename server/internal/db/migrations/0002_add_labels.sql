@@ -1,0 +1,9 @@
+CREATE TABLE IF NOT EXISTS labels (
+    id    TEXT PRIMARY KEY,
+    name  TEXT NOT NULL UNIQUE,
+    color TEXT NOT NULL
+);
+
+ALTER TABLE todos ADD COLUMN IF NOT EXISTS label_id TEXT REFERENCES labels(id) ON DELETE SET NULL;
+
+CREATE INDEX IF NOT EXISTS idx_todos_label_id ON todos (label_id);
