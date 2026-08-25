@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Button from "../components/Button";
 import { login } from "../features/auth/api";
-import { setToken } from "../features/auth/token";
+import { markJustLoggedIn, setToken } from "../features/auth/token";
 
 export function DomainExpansionPage() {
   const navigate = useNavigate();
@@ -17,6 +17,7 @@ export function DomainExpansionPage() {
     try {
       const token = await login(password);
       setToken(token);
+      markJustLoggedIn();
       navigate("/todos");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Login failed, try again.");
