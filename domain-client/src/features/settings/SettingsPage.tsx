@@ -2,15 +2,29 @@ import { useEffect, useState } from "react";
 import { sections } from "../../data/domainSections";
 import { fetchSettings, updateSettings } from "./api";
 import { LabelsSection } from "./LabelsSection";
-import type { Settings } from "./types";
+import type { Settings, TimeLeftFormat } from "./types";
 
 const settingsSections = sections.filter((section) => section.label !== "Settings");
+
+// datetime-local inputs work in "local wall clock" strings with no timezone;
+// these convert to/from the RFC3339 UTC strings the backend stores.
+function toDatetimeLocalValue(iso: string | null): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+function fromDatetimeLocalValue(value: string): string | null {
+  return value === "" ? null : new Date(value).toISOString();
+}
 
 export function SettingsPage() {
   const [settings, setSettings] = useState<Settings | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [savingHours, setSavingHours] = useState(false);
+  const [savingClock, setSavingClock] = useState(false);
 
   useEffect(() => {
     fetchSettings()
@@ -28,6 +42,18 @@ export function SettingsPage() {
     updateSettings({ dailyWorkTracker: { totalWorkHoursRequired } })
       .catch((err) => setError(err instanceof Error ? err.message : "Couldn't save settings."))
       .finally(() => setSavingHours(false));
+  }
+
+  function handleTimeLeftClockChange(patch: Partial<Settings["timeLeftClock"]>) {
+    setSettings((prev) => {
+      if (!prev) return prev;
+      const timeLeftClock = { ...prev.timeLeftClock, ...patch };
+      setSavingClock(true);
+      updateSettings({ timeLeftClock })
+        .catch((err) => setError(err instanceof Error ? err.message : "Couldn't save settings."))
+        .finally(() => setSavingClock(false));
+      return { ...prev, timeLeftClock };
+    });
   }
 
   return (
@@ -65,6 +91,44 @@ export function SettingsPage() {
             <h2 className="text-sm font-space font-medium text-(--fg) mb-3">Todos — Labels</h2>
             <LabelsSection />
           </section>
+
+          {settings && (
+            <section className="bg-(--card) border-(--line) border-[0.5px] border-solid rounded-xl p-5">
+              <h2 className="text-sm font-space font-medium text-(--fg) mb-3">Time Left Clock</h2>
+              <p className="text-[length:var(--text-caption)] text-(--text-faint) mb-3">
+                Shown as a popup on login, then permanently in the top bar.
+              </p>
+              <div className="flex flex-col gap-4 max-w-xs">
+                <label className="flex flex-col gap-1.5">
+                  <span className="text-[length:var(--text-caption)] text-(--text-muted)">Goal date & time</span>
+                  <input
+                    type="datetime-local"
+                    value={toDatetimeLocalValue(settings.timeLeftClock.goalDate)}
+                    onChange={(e) =>
+                      handleTimeLeftClockChange({ goalDate: fromDatetimeLocalValue(e.target.value) })
+                    }
+                    className="rounded-lg border-(--line) border-[0.5px] border-solid bg-(--bg) px-3 py-2 text-[length:var(--text-caption)] text-(--fg) outline-none focus:border-(--line-strong)"
+                  />
+                </label>
+
+                <label className="flex flex-col gap-1.5">
+                  <span className="text-[length:var(--text-caption)] text-(--text-muted)">Countdown format</span>
+                  <select
+                    value={settings.timeLeftClock.format}
+                    onChange={(e) => handleTimeLeftClockChange({ format: e.target.value as TimeLeftFormat })}
+                    className="rounded-lg border-(--line) border-[0.5px] border-solid bg-(--bg) px-3 py-2 text-[length:var(--text-caption)] text-(--fg) outline-none focus:border-(--line-strong)"
+                  >
+                    <option value="weeks_days_time">Weeks + days + time</option>
+                    <option value="days_time">Days + time</option>
+                  </select>
+                </label>
+
+                {savingClock && (
+                  <span className="text-[length:var(--text-pill)] text-(--text-faint)">Saving...</span>
+                )}
+              </div>
+            </section>
+          )}
 
           {settings &&
             settingsSections.map((section) => (
