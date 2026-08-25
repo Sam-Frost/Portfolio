@@ -30,7 +30,7 @@ export const sections: Section[] = [
   { label: "Daily Work Tracker", icon: CalendarCheck, enabled: false, group: "Productivity" },
   { label: "Bad Habit Tracker", icon: Ban, enabled: false, group: "Productivity" },
 
-  { label: "Notepad", icon: StickyNote, enabled: false, group: "Personal" },
+  { label: "Notepad", icon: StickyNote, enabled: true, path: "notepad", group: "Personal" },
   { label: "Drawing Board", icon: PenTool, enabled: false, group: "Personal" },
   { label: "Personal Diary", icon: BookOpen, enabled: false, group: "Personal" },
 
