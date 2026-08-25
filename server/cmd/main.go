@@ -16,6 +16,7 @@ import (
 	"github.com/Sam-Frost/portfolio/internal/label"
 	"github.com/Sam-Frost/portfolio/internal/settings"
 	"github.com/Sam-Frost/portfolio/internal/todo"
+	"github.com/Sam-Frost/portfolio/internal/upskill"
 )
 
 func healthCheck(w http.ResponseWriter, req *http.Request) {
@@ -59,7 +60,7 @@ func withAuth(authService *auth.Service, next http.Handler) http.Handler {
 
 // newRouter wires every feature's repository -> service -> handler and
 // registers its routes. Adding a feature means one more block here.
-func newRouter(authService *auth.Service, todoRepo todo.Repository, labelRepo label.Repository, settingsRepo settings.Repository) *http.ServeMux {
+func newRouter(authService *auth.Service, todoRepo todo.Repository, labelRepo label.Repository, settingsRepo settings.Repository, upskillRepo upskill.Repository) *http.ServeMux {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/health", healthCheck)
 
@@ -73,6 +74,9 @@ func newRouter(authService *auth.Service, todoRepo todo.Repository, labelRepo la
 
 	settingsService := settings.NewService(settingsRepo)
 	settings.NewHandler(settingsService).Register(mux)
+
+	upskillService := upskill.NewService(upskillRepo)
+	upskill.NewHandler(upskillService).Register(mux)
 
 	return mux
 }
@@ -114,10 +118,11 @@ func main() {
 	todoRepo := todo.NewPostgresRepository(sqlDB)
 	labelRepo := label.NewPostgresRepository(sqlDB)
 	settingsRepo := settings.NewPostgresRepository(sqlDB)
+	upskillRepo := upskill.NewPostgresRepository(sqlDB)
 
 	srv := &http.Server{
 		Addr:              ":8080",
-		Handler:           withCORS(allowedOrigin, withAuth(authService, newRouter(authService, todoRepo, labelRepo, settingsRepo))),
+		Handler:           withCORS(allowedOrigin, withAuth(authService, newRouter(authService, todoRepo, labelRepo, settingsRepo, upskillRepo))),
 		ReadHeaderTimeout: 5 * time.Second,
 		ReadTimeout:       10 * time.Second,
 		WriteTimeout:      10 * time.Second,

@@ -8,6 +8,8 @@ import { RequireAuth } from "./features/auth/RequireAuth";
 import { CredentialManagerPage } from "./features/credentials/CredentialManagerPage";
 import { TodosPage } from "./features/todos/TodosPage";
 import { SettingsPage } from "./features/settings/SettingsPage";
+import { UpskillTopicsPage } from "./features/upskill/UpskillTopicsPage";
+import { UpskillTopicPage } from "./features/upskill/UpskillTopicPage";
 
 export const router = createBrowserRouter([
   {
@@ -27,6 +29,16 @@ export const router = createBrowserRouter([
             path: "todos",
             element: <TodosPage />,
             handle: { title: "Todos" },
+          },
+          {
+            path: "upskill",
+            element: <UpskillTopicsPage />,
+            handle: { title: "Upskill" },
+          },
+          {
+            path: "upskill/:topicId",
+            element: <UpskillTopicPage />,
+            handle: { title: "Upskill" },
           },
           { path: "settings", element: <SettingsPage /> },
         ],
