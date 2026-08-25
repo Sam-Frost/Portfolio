@@ -11,6 +11,7 @@ import {
   StickyNote,
   Ban,
   Settings,
+  GraduationCap,
   type LucideIcon,
 } from "lucide-react";
 
@@ -26,6 +27,7 @@ export type Section =
 // `group` controls which sidebar section (see SECTION_GROUPS) an item sits in.
 export const sections: Section[] = [
   { label: "Todos", icon: ListTodo, enabled: true, path: "todos", group: "Productivity" },
+  { label: "Upskill", icon: GraduationCap, enabled: true, path: "upskill", group: "Productivity" },
   { label: "Hourly Tracker", icon: Clock, enabled: false, group: "Productivity" },
   { label: "Daily Work Tracker", icon: CalendarCheck, enabled: false, group: "Productivity" },
   { label: "Bad Habit Tracker", icon: Ban, enabled: false, group: "Productivity" },
