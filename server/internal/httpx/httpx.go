@@ -41,6 +41,8 @@ func statusForKind(k apperr.Kind) int {
 		return http.StatusNotFound
 	case apperr.KindUnauthorized:
 		return http.StatusUnauthorized
+	case apperr.KindConflict:
+		return http.StatusConflict
 	default:
 		return http.StatusInternalServerError
 	}

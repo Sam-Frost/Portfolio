@@ -1,7 +1,7 @@
 import type { RefObject } from "react";
 import { Bold, Italic, Underline, List, ListOrdered } from "lucide-react";
 
-interface NotepadToolbarProps {
+interface RichTextToolbarProps {
   editorRef: RefObject<HTMLDivElement | null>;
   onChange: () => void;
 }
@@ -22,7 +22,10 @@ const FONT_SIZE_OPTIONS = [
   { value: "7", label: "Huge" },
 ];
 
-export function NotepadToolbar({ editorRef, onChange }: NotepadToolbarProps) {
+// Shared by every rich-text surface in the domain area (notepad, diary, ...)
+// via RichTextEditor — operates only on a generic contentEditable ref, so it
+// carries no notepad- or diary-specific concerns of its own.
+export function RichTextToolbar({ editorRef, onChange }: RichTextToolbarProps) {
   function focusEditor() {
     editorRef.current?.focus();
   }

@@ -34,7 +34,7 @@ export const sections: Section[] = [
 
   { label: "Upskill", icon: GraduationCap, enabled: true, path: "upskill", group: "Personal" },
   { label: "Drawing Board", icon: PenTool, enabled: false, group: "Personal" },
-  { label: "Personal Diary", icon: BookOpen, enabled: false, group: "Personal" },
+  { label: "Personal Diary", icon: BookOpen, enabled: true, path: "diary", group: "Personal" },
 
   { label: "Claude Skills", icon: Sparkles, enabled: false, group: "System" },
   { label: "CMS", icon: LayoutTemplate, enabled: false, group: "System" },

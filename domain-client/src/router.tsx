@@ -12,6 +12,8 @@ import { NotepadPage } from "./features/notepad/NotepadPage";
 import { NoteEditorPage } from "./features/notepad/NoteEditorPage";
 import { UpskillTopicsPage } from "./features/upskill/UpskillTopicsPage";
 import { UpskillTopicPage } from "./features/upskill/UpskillTopicPage";
+import { DiaryCalendarPage } from "./features/diary/DiaryCalendarPage";
+import { DiaryEntryPage } from "./features/diary/DiaryEntryPage";
 
 export const router = createBrowserRouter([
   {
@@ -52,6 +54,16 @@ export const router = createBrowserRouter([
             path: "notepad/:id",
             element: <NoteEditorPage />,
             handle: { title: "Notepad" },
+          },
+          {
+            path: "diary",
+            element: <DiaryCalendarPage />,
+            handle: { title: "Personal Diary" },
+          },
+          {
+            path: "diary/:date",
+            element: <DiaryEntryPage />,
+            handle: { title: "Personal Diary" },
           },
         ],
       },
