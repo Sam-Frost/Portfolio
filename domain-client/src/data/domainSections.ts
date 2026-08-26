@@ -27,12 +27,12 @@ export type Section =
 // `group` controls which sidebar section (see SECTION_GROUPS) an item sits in.
 export const sections: Section[] = [
   { label: "Todos", icon: ListTodo, enabled: true, path: "todos", group: "Productivity" },
-  { label: "Upskill", icon: GraduationCap, enabled: true, path: "upskill", group: "Productivity" },
+  { label: "Notepad", icon: StickyNote, enabled: true, path: "notepad", group: "Productivity" },
   { label: "Hourly Tracker", icon: Clock, enabled: false, group: "Productivity" },
   { label: "Daily Work Tracker", icon: CalendarCheck, enabled: false, group: "Productivity" },
   { label: "Bad Habit Tracker", icon: Ban, enabled: false, group: "Productivity" },
 
-  { label: "Notepad", icon: StickyNote, enabled: true, path: "notepad", group: "Personal" },
+  { label: "Upskill", icon: GraduationCap, enabled: true, path: "upskill", group: "Personal" },
   { label: "Drawing Board", icon: PenTool, enabled: false, group: "Personal" },
   { label: "Personal Diary", icon: BookOpen, enabled: false, group: "Personal" },
 
