@@ -191,7 +191,7 @@ func main() {
 	}
 
 	go func() {
-		fmt.Println("Server is starting to listen on port 8080...")
+		fmt.Printf("Server is starting to listen on port %s...\n", port)
 		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			log.Fatalf("server error: %v", err)
 		}
