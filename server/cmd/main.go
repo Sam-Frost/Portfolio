@@ -11,9 +11,11 @@ import (
 	"os/signal"
 	"syscall"
 	"time"
+	_ "time/tzdata" // embeds the IANA zoneinfo DB so time.LoadLocation("Asia/Kolkata") (internal/diary) works even on a host/image without a system tzdata package (e.g. the alpine runtime image)
 
 	"github.com/Sam-Frost/portfolio/internal/auth"
 	"github.com/Sam-Frost/portfolio/internal/db"
+	"github.com/Sam-Frost/portfolio/internal/diary"
 	"github.com/Sam-Frost/portfolio/internal/label"
 	"github.com/Sam-Frost/portfolio/internal/notepad"
 	"github.com/Sam-Frost/portfolio/internal/settings"
@@ -74,6 +76,7 @@ func newRouter(
 	settingsRepo settings.Repository,
 	notepadRepo notepad.Repository,
 	upskillRepo upskill.Repository,
+	diaryRepo diary.Repository,
 	spotifyRepo spotify.Repository,
 	spotifyClientID, spotifyClientSecret, spotifyRedirectURI, spotifyFrontendURL, jwtSecret string,
 ) *http.ServeMux {
@@ -96,6 +99,9 @@ func newRouter(
 
 	upskillService := upskill.NewService(upskillRepo)
 	upskill.NewHandler(upskillService).Register(mux)
+
+	diaryService := diary.NewService(diaryRepo)
+	diary.NewHandler(diaryService).Register(mux)
 
 	spotifyClient := spotify.NewAPIClient(spotifyClientID, spotifyClientSecret, spotifyRedirectURI)
 	spotifyService := spotify.NewService(spotifyRepo, spotifyClient, []byte(jwtSecret))
@@ -156,10 +162,11 @@ func main() {
 	settingsRepo := settings.NewPostgresRepository(sqlDB)
 	notepadRepo := notepad.NewPostgresRepository(sqlDB)
 	upskillRepo := upskill.NewPostgresRepository(sqlDB)
+	diaryRepo := diary.NewPostgresRepository(sqlDB)
 	spotifyRepo := spotify.NewPostgresRepository(sqlDB, spotifyCipher)
 
 	router := newRouter(
-		authService, todoRepo, labelRepo, settingsRepo, notepadRepo, upskillRepo,
+		authService, todoRepo, labelRepo, settingsRepo, notepadRepo, upskillRepo, diaryRepo,
 		spotifyRepo, spotifyClientID, spotifyClientSecret, spotifyRedirectURI, spotifyFrontendURL, jwtSecret,
 	)
 
