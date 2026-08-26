@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Plus, Trash2 } from "lucide-react";
 import { createNote, deleteNote, fetchNotes } from "./api";
+import { DeleteNoteDialog } from "./DeleteNoteDialog";
 import type { NoteSummary } from "./types";
 
 function formatDate(value: string) {
@@ -14,6 +15,7 @@ export function NotepadPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
+  const [pendingDelete, setPendingDelete] = useState<NoteSummary | null>(null);
 
   useEffect(() => {
     fetchNotes()
@@ -33,6 +35,7 @@ export function NotepadPage() {
   function handleDelete(id: string) {
     const previous = notes;
     setNotes((prev) => prev.filter((n) => n.id !== id));
+    setPendingDelete(null);
     deleteNote(id).catch((err) => {
       setNotes(previous);
       setError(err instanceof Error ? err.message : "Couldn't delete note.");
@@ -91,7 +94,7 @@ export function NotepadPage() {
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
-                    handleDelete(note.id);
+                    setPendingDelete(note);
                   }}
                   aria-label="Delete note"
                   className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 text-(--text-faint) hover:text-(--label-red) transition-colors cursor-pointer"
@@ -103,6 +106,14 @@ export function NotepadPage() {
           </div>
         )}
       </div>
+
+      {pendingDelete && (
+        <DeleteNoteDialog
+          title={pendingDelete.title}
+          onCancel={() => setPendingDelete(null)}
+          onConfirm={() => handleDelete(pendingDelete.id)}
+        />
+      )}
     </div>
   );
 }

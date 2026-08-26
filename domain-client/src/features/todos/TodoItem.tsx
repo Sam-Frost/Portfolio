@@ -1,4 +1,4 @@
-import { Check, Info } from "lucide-react";
+import { Check } from "lucide-react";
 import { useState } from "react";
 import { LABEL_COLOR_VAR } from "../labels/colors";
 import type { Label } from "../labels/types";
@@ -26,17 +26,16 @@ export function TodoItem({ todo, labels, onMarkDone, onUpdate }: TodoItemProps) 
   return (
     <div
       onDoubleClick={() => setEditing(true)}
-      className="group relative flex items-center gap-2 bg-(--card) border-(--line) border-[0.5px] border-solid rounded-lg px-3 py-1.5"
+      className="group relative flex items-start gap-2 bg-(--card) border-(--line) border-[0.5px] border-solid rounded-lg px-3 py-1.5"
     >
-      <div className="flex-1 min-w-0 flex items-center gap-1.5">
+      <div className="flex-1 min-w-0">
         <span
-          className={`text-[length:var(--text-pill)] truncate ${
+          className={`text-[length:var(--text-pill)] break-words ${
             todo.done ? "text-(--text-faint) line-through" : "text-(--fg)"
           }`}
         >
           {todo.name}
         </span>
-        <Info size={11} className="shrink-0 text-(--text-faint)" />
       </div>
 
       {label && (

@@ -10,7 +10,7 @@ import type { Settings } from "../features/settings/types";
 import { TimeLeftClock } from "../features/time-left-clock/TimeLeftClock";
 import { TimeLeftClockModal } from "../features/time-left-clock/TimeLeftClockModal";
 
-type RouteHandle = { title: string; subtitle?: string };
+type RouteHandle = { title: string; subtitle?: string; fullWidth?: boolean };
 
 export function DomainLayout() {
   const matches = useMatches();
@@ -58,8 +58,14 @@ export function DomainLayout() {
           </button>
         </div>
         {/* min-h-0 lets a page (e.g. Todos) opt into its own internal scroll
-            region instead of this whole area scrolling. */}
-        <div className="flex-1 min-h-0 overflow-hidden px-6 py-6 w-full max-w-(--maxw)">
+            region instead of this whole area scrolling. relative scopes
+            page-level overlays (e.g. Toast) to this non-sidebar content
+            area instead of the full viewport. */}
+        <div
+          className={`relative flex-1 min-h-0 overflow-hidden px-6 py-6 w-full ${
+            handle?.fullWidth ? "" : "max-w-(--maxw) mx-auto"
+          }`}
+        >
           <Outlet />
         </div>
       </div>

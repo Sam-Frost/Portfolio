@@ -10,12 +10,13 @@ import (
 )
 
 type MemoryRepository struct {
-	mu    sync.Mutex
-	notes map[string]Note
+	mu      sync.Mutex
+	notes   map[string]Note
+	deleted map[string]bool
 }
 
 func NewMemoryRepository() *MemoryRepository {
-	return &MemoryRepository{notes: make(map[string]Note)}
+	return &MemoryRepository{notes: make(map[string]Note), deleted: make(map[string]bool)}
 }
 
 func (r *MemoryRepository) Create(_ context.Context, n Note) (Note, error) {
@@ -33,6 +34,9 @@ func (r *MemoryRepository) List(_ context.Context) ([]NoteSummary, error) {
 
 	summaries := make([]NoteSummary, 0, len(r.notes))
 	for _, n := range r.notes {
+		if r.deleted[n.ID] {
+			continue
+		}
 		summaries = append(summaries, NoteSummary{ID: n.ID, Title: n.Title, CreatedAt: n.CreatedAt, UpdatedAt: n.UpdatedAt})
 	}
 	sort.Slice(summaries, func(i, j int) bool { return summaries[i].CreatedAt.After(summaries[j].CreatedAt) })
@@ -44,7 +48,7 @@ func (r *MemoryRepository) Get(_ context.Context, noteID string) (Note, error) {
 	defer r.mu.Unlock()
 
 	n, ok := r.notes[noteID]
-	if !ok {
+	if !ok || r.deleted[noteID] {
 		return Note{}, apperr.NotFound("note not found")
 	}
 	return n, nil
@@ -55,7 +59,7 @@ func (r *MemoryRepository) Update(_ context.Context, noteID string, input Update
 	defer r.mu.Unlock()
 
 	n, ok := r.notes[noteID]
-	if !ok {
+	if !ok || r.deleted[noteID] {
 		return Note{}, apperr.NotFound("note not found")
 	}
 
@@ -71,13 +75,15 @@ func (r *MemoryRepository) Update(_ context.Context, noteID string, input Update
 	return n, nil
 }
 
+// Delete is a soft delete: the note is flagged rather than removed, so it
+// drops out of List/Get/Update but its data isn't destroyed.
 func (r *MemoryRepository) Delete(_ context.Context, noteID string) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	if _, ok := r.notes[noteID]; !ok {
+	if _, ok := r.notes[noteID]; !ok || r.deleted[noteID] {
 		return apperr.NotFound("note not found")
 	}
-	delete(r.notes, noteID)
+	r.deleted[noteID] = true
 	return nil
 }

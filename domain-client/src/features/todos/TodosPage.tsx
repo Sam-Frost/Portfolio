@@ -1,10 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import { ArrowDownWideNarrow, ArrowUpWideNarrow, SlidersHorizontal, Tag, TagX, X } from "lucide-react";
+import { Toast } from "../../components/Toast";
 import { fetchLabels } from "../labels/api";
 import { LABEL_COLOR_VAR } from "../labels/colors";
 import type { Label } from "../labels/types";
 import { createTodo, fetchTodos, setTodoDone, updateTodo } from "./api";
 import { AddTodoForm } from "./AddTodoForm";
+import { LabelCountChart } from "./LabelCountChart";
+import { LabelDistributionPie } from "./LabelDistributionPie";
 import { TodoItem } from "./TodoItem";
 import type { SortField, Todo } from "./types";
 
@@ -36,6 +39,7 @@ export function TodosPage() {
   const [labelFilter, setLabelFilter] = useState<string | null>(null);
   const [showLabelMenu, setShowLabelMenu] = useState(false);
   const [tab, setTab] = useState<Tab>("active");
+  const [toast, setToast] = useState<{ key: number; message: string } | null>(null);
   const sortMenuRef = useRef<HTMLDivElement>(null);
   const labelMenuRef = useRef<HTMLDivElement>(null);
 
@@ -88,7 +92,10 @@ export function TodosPage() {
     labelId: string | null;
   }) {
     createTodo(input)
-      .then((todo) => setTodos((prev) => [todo, ...prev]))
+      .then((todo) => {
+        setTodos((prev) => [todo, ...prev]);
+        setToast((prev) => ({ key: (prev?.key ?? 0) + 1, message: "Todo added" }));
+      })
       .catch((err) => setError(err instanceof Error ? err.message : "Couldn't add todo."));
   }
 
@@ -129,196 +136,207 @@ export function TodosPage() {
 
   return (
     <div className="h-full flex flex-col">
-      <div className="shrink-0">
-        <AddTodoForm labels={labels} onAdd={handleCreate} />
+      {toast && <Toast key={toast.key} message={toast.message} onDone={() => setToast(null)} />}
 
-        {error && (
-          <div className="mb-3 flex items-center justify-between gap-2 rounded-lg border-(--line) border-[0.5px] border-solid bg-(--card) px-3 py-2 text-[length:var(--text-pill)] text-red-400">
-            <span>{error}</span>
-            <button
-              onClick={() => setError(null)}
-              aria-label="Dismiss error"
-              className="shrink-0 text-(--text-faint) hover:text-(--fg) transition-colors cursor-pointer"
-            >
-              <X size={12} />
-            </button>
-          </div>
-        )}
+      <div className="flex-1 min-h-0 flex flex-col lg:flex-row gap-4">
+        <div className="flex-1 min-w-0 flex flex-col min-h-0">
+          <div className="shrink-0">
+            <AddTodoForm labels={labels} onAdd={handleCreate} />
 
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-1 rounded-lg bg-(--card-alt) p-1">
-            <button
-              onClick={() => setTab("active")}
-              className={`rounded-md px-3 py-1 text-[length:var(--text-pill)] transition-colors cursor-pointer ${
-                tab === "active" ? "bg-(--card) text-(--fg)" : "text-(--text-muted) hover:text-(--fg)"
-              }`}
-            >
-              Active ({activeTodos.length})
-            </button>
-            <button
-              onClick={() => setTab("completed")}
-              className={`rounded-md px-3 py-1 text-[length:var(--text-pill)] transition-colors cursor-pointer ${
-                tab === "completed" ? "bg-(--card) text-(--fg)" : "text-(--text-muted) hover:text-(--fg)"
-              }`}
-            >
-              Completed ({completedTodos.length})
-            </button>
-          </div>
+            {error && (
+              <div className="mb-3 flex items-center justify-between gap-2 rounded-lg border-(--line) border-[0.5px] border-solid bg-(--card) px-3 py-2 text-[length:var(--text-pill)] text-red-400">
+                <span>{error}</span>
+                <button
+                  onClick={() => setError(null)}
+                  aria-label="Dismiss error"
+                  className="shrink-0 text-(--text-faint) hover:text-(--fg) transition-colors cursor-pointer"
+                >
+                  <X size={12} />
+                </button>
+              </div>
+            )}
 
-          <div className="flex items-center gap-1.5">
-            <div className="relative" ref={labelMenuRef}>
-              <button
-                onClick={() => setShowLabelMenu((v) => !v)}
-                aria-label="Filter by label"
-                className={`flex items-center gap-1.5 h-7 rounded-lg px-2 text-[length:var(--text-pill)] transition-colors cursor-pointer ${
-                  showLabelMenu || activeLabel || isNoLabelFilter
-                    ? "bg-(--card-alt) text-(--fg)"
-                    : "text-(--text-muted) hover:text-(--fg) hover:bg-(--card-alt)"
-                }`}
-              >
-                {activeLabel ? (
-                  <>
-                    <span
-                      className="size-2 rounded-full shrink-0"
-                      style={{ backgroundColor: LABEL_COLOR_VAR[activeLabel.color] }}
-                    />
-                    {activeLabel.name}
-                  </>
-                ) : isNoLabelFilter ? (
-                  <>
-                    <TagX size={15} />
-                    No label
-                  </>
-                ) : (
-                  <Tag size={15} />
-                )}
-              </button>
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-1 rounded-lg bg-(--card-alt) p-1">
+                <button
+                  onClick={() => setTab("active")}
+                  className={`rounded-md px-3 py-1 text-[length:var(--text-pill)] transition-colors cursor-pointer ${
+                    tab === "active" ? "bg-(--card) text-(--fg)" : "text-(--text-muted) hover:text-(--fg)"
+                  }`}
+                >
+                  Active ({activeTodos.length})
+                </button>
+                <button
+                  onClick={() => setTab("completed")}
+                  className={`rounded-md px-3 py-1 text-[length:var(--text-pill)] transition-colors cursor-pointer ${
+                    tab === "completed" ? "bg-(--card) text-(--fg)" : "text-(--text-muted) hover:text-(--fg)"
+                  }`}
+                >
+                  Completed ({completedTodos.length})
+                </button>
+              </div>
 
-              {showLabelMenu && (
-                <div className="absolute right-0 z-10 mt-2 w-52 max-h-56 overflow-y-auto rounded-lg border-(--line) border-[0.5px] border-solid bg-(--card) p-1.5 shadow-lg themed-scrollbar">
+              <div className="flex items-center gap-1.5">
+                <div className="relative" ref={labelMenuRef}>
                   <button
-                    onClick={() => {
-                      setLabelFilter(null);
-                      setShowLabelMenu(false);
-                    }}
-                    className={`flex w-full items-center rounded-lg px-3 py-1.5 text-left text-[length:var(--text-pill)] transition-colors cursor-pointer ${
-                      !labelFilter
+                    onClick={() => setShowLabelMenu((v) => !v)}
+                    aria-label="Filter by label"
+                    className={`flex items-center gap-1.5 h-7 rounded-lg px-2 text-[length:var(--text-pill)] transition-colors cursor-pointer ${
+                      showLabelMenu || activeLabel || isNoLabelFilter
                         ? "bg-(--card-alt) text-(--fg)"
                         : "text-(--text-muted) hover:text-(--fg) hover:bg-(--card-alt)"
                     }`}
                   >
-                    All labels
+                    {activeLabel ? (
+                      <>
+                        <span
+                          className="size-2 rounded-full shrink-0"
+                          style={{ backgroundColor: LABEL_COLOR_VAR[activeLabel.color] }}
+                        />
+                        {activeLabel.name}
+                      </>
+                    ) : isNoLabelFilter ? (
+                      <>
+                        <TagX size={15} />
+                        No label
+                      </>
+                    ) : (
+                      <Tag size={15} />
+                    )}
                   </button>
-                  <button
-                    onClick={() => {
-                      setLabelFilter(NO_LABEL_FILTER);
-                      setShowLabelMenu(false);
-                    }}
-                    className={`flex w-full items-center gap-1.5 rounded-lg px-3 py-1.5 text-left text-[length:var(--text-pill)] transition-colors cursor-pointer ${
-                      isNoLabelFilter
-                        ? "bg-(--card-alt) text-(--fg)"
-                        : "text-(--text-muted) hover:text-(--fg) hover:bg-(--card-alt)"
-                    }`}
-                  >
-                    <TagX size={12} className="shrink-0" />
-                    <span className="truncate flex-1">No label</span>
-                    <span className="shrink-0 text-(--text-faint)">
-                      {tab === "active" ? noLabelCounts.active : noLabelCounts.completed}
-                    </span>
-                  </button>
-                  {labels.map((l) => {
-                    const counts = labelCounts(todos, l.id);
-                    return (
+
+                  {showLabelMenu && (
+                    <div className="absolute right-0 z-10 mt-2 w-52 max-h-56 overflow-y-auto rounded-lg border-(--line) border-[0.5px] border-solid bg-(--card) p-1.5 shadow-lg themed-scrollbar">
                       <button
-                        key={l.id}
                         onClick={() => {
-                          setLabelFilter(l.id);
+                          setLabelFilter(null);
                           setShowLabelMenu(false);
                         }}
-                        className={`flex w-full items-center gap-1.5 rounded-lg px-3 py-1.5 text-left text-[length:var(--text-pill)] transition-colors cursor-pointer ${
-                          labelFilter === l.id
+                        className={`flex w-full items-center rounded-lg px-3 py-1.5 text-left text-[length:var(--text-pill)] transition-colors cursor-pointer ${
+                          !labelFilter
                             ? "bg-(--card-alt) text-(--fg)"
                             : "text-(--text-muted) hover:text-(--fg) hover:bg-(--card-alt)"
                         }`}
                       >
-                        <span
-                          className="size-2 rounded-full shrink-0"
-                          style={{ backgroundColor: LABEL_COLOR_VAR[l.color] }}
-                        />
-                        <span className="truncate flex-1">{l.name}</span>
+                        All labels
+                      </button>
+                      <button
+                        onClick={() => {
+                          setLabelFilter(NO_LABEL_FILTER);
+                          setShowLabelMenu(false);
+                        }}
+                        className={`flex w-full items-center gap-1.5 rounded-lg px-3 py-1.5 text-left text-[length:var(--text-pill)] transition-colors cursor-pointer ${
+                          isNoLabelFilter
+                            ? "bg-(--card-alt) text-(--fg)"
+                            : "text-(--text-muted) hover:text-(--fg) hover:bg-(--card-alt)"
+                        }`}
+                      >
+                        <TagX size={12} className="shrink-0" />
+                        <span className="truncate flex-1">No label</span>
                         <span className="shrink-0 text-(--text-faint)">
-                          {tab === "active" ? counts.active : counts.completed}
+                          {tab === "active" ? noLabelCounts.active : noLabelCounts.completed}
                         </span>
                       </button>
-                    );
-                  })}
-                  {labels.length === 0 && (
-                    <p className="px-3 py-1.5 text-[length:var(--text-pill)] text-(--text-faint)">No labels yet.</p>
+                      {labels.map((l) => {
+                        const counts = labelCounts(todos, l.id);
+                        return (
+                          <button
+                            key={l.id}
+                            onClick={() => {
+                              setLabelFilter(l.id);
+                              setShowLabelMenu(false);
+                            }}
+                            className={`flex w-full items-center gap-1.5 rounded-lg px-3 py-1.5 text-left text-[length:var(--text-pill)] transition-colors cursor-pointer ${
+                              labelFilter === l.id
+                                ? "bg-(--card-alt) text-(--fg)"
+                                : "text-(--text-muted) hover:text-(--fg) hover:bg-(--card-alt)"
+                            }`}
+                          >
+                            <span
+                              className="size-2 rounded-full shrink-0"
+                              style={{ backgroundColor: LABEL_COLOR_VAR[l.color] }}
+                            />
+                            <span className="truncate flex-1">{l.name}</span>
+                            <span className="shrink-0 text-(--text-faint)">
+                              {tab === "active" ? counts.active : counts.completed}
+                            </span>
+                          </button>
+                        );
+                      })}
+                      {labels.length === 0 && (
+                        <p className="px-3 py-1.5 text-[length:var(--text-pill)] text-(--text-faint)">No labels yet.</p>
+                      )}
+                    </div>
                   )}
                 </div>
-              )}
-            </div>
 
-            <div className="relative" ref={sortMenuRef}>
-              <button
-                onClick={() => setShowSortMenu((v) => !v)}
-                aria-label="Sort options"
-                className={`flex items-center justify-center size-7 rounded-lg transition-colors cursor-pointer ${
-                  showSortMenu ? "bg-(--card-alt) text-(--fg)" : "text-(--text-muted) hover:text-(--fg) hover:bg-(--card-alt)"
-                }`}
-              >
-                <SlidersHorizontal size={15} />
-              </button>
-
-              {showSortMenu && (
-                <div className="absolute right-0 z-10 mt-2 flex items-center gap-1.5 rounded-lg border-(--line) border-[0.5px] border-solid bg-(--card) p-1.5 shadow-lg">
-                  {SORT_OPTIONS.map((option) => (
-                    <button
-                      key={option.field}
-                      onClick={() => setSortField(option.field)}
-                      className={`whitespace-nowrap rounded-lg px-3 py-1.5 text-[length:var(--text-pill)] transition-colors cursor-pointer ${
-                        sortField === option.field
-                          ? "bg-(--card-alt) text-(--fg)"
-                          : "text-(--text-muted) hover:text-(--fg) hover:bg-(--card-alt)"
-                      }`}
-                    >
-                      {option.label}
-                    </button>
-                  ))}
+                <div className="relative" ref={sortMenuRef}>
                   <button
-                    onClick={() => setAscending((v) => !v)}
-                    aria-label={ascending ? "Sort descending" : "Sort ascending"}
-                    className="flex items-center justify-center size-7 rounded-lg text-(--text-muted) hover:text-(--fg) hover:bg-(--card-alt) transition-colors cursor-pointer"
+                    onClick={() => setShowSortMenu((v) => !v)}
+                    aria-label="Sort options"
+                    className={`flex items-center justify-center size-7 rounded-lg transition-colors cursor-pointer ${
+                      showSortMenu ? "bg-(--card-alt) text-(--fg)" : "text-(--text-muted) hover:text-(--fg) hover:bg-(--card-alt)"
+                    }`}
                   >
-                    {ascending ? <ArrowUpWideNarrow size={15} /> : <ArrowDownWideNarrow size={15} />}
+                    <SlidersHorizontal size={15} />
                   </button>
+
+                  {showSortMenu && (
+                    <div className="absolute right-0 z-10 mt-2 flex items-center gap-1.5 rounded-lg border-(--line) border-[0.5px] border-solid bg-(--card) p-1.5 shadow-lg">
+                      {SORT_OPTIONS.map((option) => (
+                        <button
+                          key={option.field}
+                          onClick={() => setSortField(option.field)}
+                          className={`whitespace-nowrap rounded-lg px-3 py-1.5 text-[length:var(--text-pill)] transition-colors cursor-pointer ${
+                            sortField === option.field
+                              ? "bg-(--card-alt) text-(--fg)"
+                              : "text-(--text-muted) hover:text-(--fg) hover:bg-(--card-alt)"
+                          }`}
+                        >
+                          {option.label}
+                        </button>
+                      ))}
+                      <button
+                        onClick={() => setAscending((v) => !v)}
+                        aria-label={ascending ? "Sort descending" : "Sort ascending"}
+                        className="flex items-center justify-center size-7 rounded-lg text-(--text-muted) hover:text-(--fg) hover:bg-(--card-alt) transition-colors cursor-pointer"
+                      >
+                        {ascending ? <ArrowUpWideNarrow size={15} /> : <ArrowDownWideNarrow size={15} />}
+                      </button>
+                    </div>
+                  )}
                 </div>
-              )}
+              </div>
             </div>
+          </div>
+
+          <div className="flex-1 min-h-0 overflow-y-auto themed-scrollbar pr-2">
+            {loading && (
+              <div className="bg-(--card) border-(--line) border-[0.5px] border-solid rounded-xl p-8 text-center text-(--text-faint) text-[length:var(--text-caption)]">
+                Loading todos...
+              </div>
+            )}
+
+            {!loading && visibleTodos.length === 0 && (
+              <div className="bg-(--card) border-(--line) border-[0.5px] border-solid rounded-xl p-8 text-center text-(--text-faint) text-[length:var(--text-caption)]">
+                {tab === "active" ? "No active todos." : "No completed todos yet."}
+              </div>
+            )}
+
+            {!loading && visibleTodos.length > 0 && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-1.5 pb-2">
+                {visibleTodos.map((todo) => (
+                  <TodoItem key={todo.id} todo={todo} labels={labels} onMarkDone={handleMarkDone} onUpdate={handleUpdate} />
+                ))}
+              </div>
+            )}
           </div>
         </div>
-      </div>
 
-      <div className="flex-1 min-h-0 overflow-y-auto themed-scrollbar">
-        {loading && (
-          <div className="bg-(--card) border-(--line) border-[0.5px] border-solid rounded-xl p-8 text-center text-(--text-faint) text-[length:var(--text-caption)]">
-            Loading todos...
-          </div>
-        )}
-
-        {!loading && visibleTodos.length === 0 && (
-          <div className="bg-(--card) border-(--line) border-[0.5px] border-solid rounded-xl p-8 text-center text-(--text-faint) text-[length:var(--text-caption)]">
-            {tab === "active" ? "No active todos." : "No completed todos yet."}
-          </div>
-        )}
-
-        {!loading && visibleTodos.length > 0 && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-1.5 pb-2">
-            {visibleTodos.map((todo) => (
-              <TodoItem key={todo.id} todo={todo} labels={labels} onMarkDone={handleMarkDone} onUpdate={handleUpdate} />
-            ))}
-          </div>
-        )}
+        <div className="lg:w-64 shrink-0 flex flex-col gap-4 min-h-0 overflow-y-auto themed-scrollbar">
+          <LabelCountChart todos={todos} labels={labels} tab={tab} />
+          <LabelDistributionPie todos={todos} labels={labels} tab={tab} />
+        </div>
       </div>
     </div>
   );

@@ -30,7 +30,7 @@ export const router = createBrowserRouter([
           {
             path: "todos",
             element: <TodosPage />,
-            handle: { title: "Todos" },
+            handle: { title: "Todos", fullWidth: true },
           },
           {
             path: "upskill",

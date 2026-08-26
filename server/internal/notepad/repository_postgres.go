@@ -30,7 +30,7 @@ func (r *PostgresRepository) Create(ctx context.Context, n Note) (Note, error) {
 }
 
 func (r *PostgresRepository) List(ctx context.Context) ([]NoteSummary, error) {
-	const q = `SELECT id, title, created_at, updated_at FROM notes ORDER BY created_at DESC`
+	const q = `SELECT id, title, created_at, updated_at FROM notes WHERE deleted_at IS NULL ORDER BY created_at DESC`
 
 	rows, err := r.db.QueryContext(ctx, q)
 	if err != nil {
@@ -54,7 +54,7 @@ func (r *PostgresRepository) List(ctx context.Context) ([]NoteSummary, error) {
 }
 
 func (r *PostgresRepository) Get(ctx context.Context, noteID string) (Note, error) {
-	const q = `SELECT id, title, content_html, created_at, updated_at FROM notes WHERE id = $1`
+	const q = `SELECT id, title, content_html, created_at, updated_at FROM notes WHERE id = $1 AND deleted_at IS NULL`
 
 	var n Note
 	err := r.db.QueryRowContext(ctx, q, noteID).Scan(&n.ID, &n.Title, &n.ContentHTML, &n.CreatedAt, &n.UpdatedAt)
@@ -93,7 +93,7 @@ func (r *PostgresRepository) Update(ctx context.Context, noteID string, input Up
 
 	args = append(args, noteID)
 	q := fmt.Sprintf(
-		"UPDATE notes SET %s WHERE id = $%d RETURNING id, title, content_html, created_at, updated_at",
+		"UPDATE notes SET %s WHERE id = $%d AND deleted_at IS NULL RETURNING id, title, content_html, created_at, updated_at",
 		strings.Join(sets, ", "), argN,
 	)
 
@@ -108,8 +108,12 @@ func (r *PostgresRepository) Update(ctx context.Context, noteID string, input Up
 	return n, nil
 }
 
+// Delete is a soft delete: it stamps deleted_at rather than removing the
+// row, so the note drops out of List/Get/Update but its data is retained.
 func (r *PostgresRepository) Delete(ctx context.Context, noteID string) error {
-	res, err := r.db.ExecContext(ctx, `DELETE FROM notes WHERE id = $1`, noteID)
+	res, err := r.db.ExecContext(
+		ctx, `UPDATE notes SET deleted_at = $1 WHERE id = $2 AND deleted_at IS NULL`, updatedAtNow(), noteID,
+	)
 	if err != nil {
 		return apperr.Internal("failed to delete note")
 	}

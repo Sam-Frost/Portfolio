@@ -92,3 +92,32 @@ func TestService_ListOmitsContent(t *testing.T) {
 		t.Fatalf("List = %+v, want one summary titled %q", summaries, "Notes")
 	}
 }
+
+func TestService_DeleteIsSoft(t *testing.T) {
+	svc := NewService(NewMemoryRepository())
+
+	n, err := svc.Create(context.Background(), CreateInput{})
+	if err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+
+	if err := svc.Delete(context.Background(), n.ID); err != nil {
+		t.Fatalf("Delete: %v", err)
+	}
+
+	if _, err := svc.Get(context.Background(), n.ID); err == nil {
+		t.Errorf("Get after Delete = nil error, want not-found")
+	}
+
+	summaries, err := svc.List(context.Background())
+	if err != nil {
+		t.Fatalf("List: %v", err)
+	}
+	if len(summaries) != 0 {
+		t.Errorf("List after Delete = %+v, want none", summaries)
+	}
+
+	if err := svc.Delete(context.Background(), n.ID); err == nil {
+		t.Errorf("second Delete = nil error, want not-found")
+	}
+}
