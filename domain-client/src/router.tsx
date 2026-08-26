@@ -14,6 +14,7 @@ import { UpskillTopicsPage } from "./features/upskill/UpskillTopicsPage";
 import { UpskillTopicPage } from "./features/upskill/UpskillTopicPage";
 import { DiaryCalendarPage } from "./features/diary/DiaryCalendarPage";
 import { DiaryEntryPage } from "./features/diary/DiaryEntryPage";
+import { HourlyTrackerPage } from "./features/hourly-tracker/HourlyTrackerPage";
 
 export const router = createBrowserRouter([
   {
@@ -43,6 +44,11 @@ export const router = createBrowserRouter([
             path: "upskill/:topicId",
             element: <UpskillTopicPage />,
             handle: { title: "Upskill" },
+          },
+          {
+            path: "hourly-tracker",
+            element: <HourlyTrackerPage />,
+            handle: { title: "Hourly Tracker" },
           },
           { path: "settings", element: <SettingsPage /> },
           {

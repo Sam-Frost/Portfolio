@@ -6,6 +6,7 @@ import { LeaveDomainDialog } from "../components/LeaveDomainDialog";
 import { PUBLIC_SITE_URL } from "../config";
 import { clearToken, consumeJustLoggedIn } from "../features/auth/token";
 import { fetchSettings } from "../features/settings/api";
+import { HourlyTrackerProvider } from "../features/hourly-tracker/HourlyTrackerProvider";
 import { SpotifyPlayerProvider } from "../features/spotify/SpotifyPlayerProvider";
 import type { Settings } from "../features/settings/types";
 import { TimeLeftClock } from "../features/time-left-clock/TimeLeftClock";
@@ -36,55 +37,57 @@ export function DomainLayout() {
 
   return (
     <SpotifyPlayerProvider>
-      <div className="h-screen flex bg-(--bg) overflow-hidden">
-        <DomainSidebar />
-        <div className="flex-1 flex flex-col min-w-0">
-          <div className="shrink-0 border-b-[0.5px] border-(--line-soft) px-6 py-4 grid grid-cols-[1fr_auto_1fr] items-center gap-4">
-            <div className="min-w-0">
-              <span className="font-space font-semibold text-(--fg) truncate block">{handle?.title ?? "Domain"}</span>
-              {handle?.subtitle && (
-                <p className="text-[length:var(--text-caption)] text-(--text-muted) truncate">{handle.subtitle}</p>
-              )}
-            </div>
+      <HourlyTrackerProvider>
+        <div className="h-screen flex bg-(--bg) overflow-hidden">
+          <DomainSidebar />
+          <div className="flex-1 flex flex-col min-w-0">
+            <div className="shrink-0 border-b-[0.5px] border-(--line-soft) px-6 py-4 grid grid-cols-[1fr_auto_1fr] items-center gap-4">
+              <div className="min-w-0">
+                <span className="font-space font-semibold text-(--fg) truncate block">{handle?.title ?? "Domain"}</span>
+                {handle?.subtitle && (
+                  <p className="text-[length:var(--text-caption)] text-(--text-muted) truncate">{handle.subtitle}</p>
+                )}
+              </div>
 
-            <div className="flex justify-center">
-              {settings && goalDate && <TimeLeftClock goalDate={goalDate} format={settings.timeLeftClock.format} />}
-            </div>
+              <div className="flex justify-center">
+                {settings && goalDate && <TimeLeftClock goalDate={goalDate} format={settings.timeLeftClock.format} />}
+              </div>
 
-            <button
-              className="justify-self-end flex items-center gap-1.5 text-[length:var(--text-caption)] text-(--text-muted) hover:text-(--fg) cursor-pointer"
-              onClick={() => setShowLeaveDialog(true)}
+              <button
+                className="justify-self-end flex items-center gap-1.5 text-[length:var(--text-caption)] text-(--text-muted) hover:text-(--fg) cursor-pointer"
+                onClick={() => setShowLeaveDialog(true)}
+              >
+                <LogOut size={14} />
+                Leave Domain
+              </button>
+            </div>
+            {/* min-h-0 lets a page (e.g. Todos) opt into its own internal scroll
+                region instead of this whole area scrolling. relative scopes
+                page-level overlays (e.g. Toast) to this non-sidebar content
+                area instead of the full viewport. */}
+            <div
+              className={`relative flex-1 min-h-0 overflow-hidden px-6 py-6 w-full ${
+                handle?.fullWidth ? "" : "max-w-(--maxw) mx-auto"
+              }`}
             >
-              <LogOut size={14} />
-              Leave Domain
-            </button>
+              <Outlet />
+            </div>
           </div>
-          {/* min-h-0 lets a page (e.g. Todos) opt into its own internal scroll
-              region instead of this whole area scrolling. relative scopes
-              page-level overlays (e.g. Toast) to this non-sidebar content
-              area instead of the full viewport. */}
-          <div
-            className={`relative flex-1 min-h-0 overflow-hidden px-6 py-6 w-full ${
-              handle?.fullWidth ? "" : "max-w-(--maxw) mx-auto"
-            }`}
-          >
-            <Outlet />
-          </div>
+          {showLeaveDialog && (
+            <LeaveDomainDialog
+              onCancel={() => setShowLeaveDialog(false)}
+              onConfirm={() => { clearToken(); window.location.href = PUBLIC_SITE_URL; }}
+            />
+          )}
+          {showLoginModal && settings && goalDate && (
+            <TimeLeftClockModal
+              goalDate={goalDate}
+              format={settings.timeLeftClock.format}
+              onClose={() => setShowLoginModal(false)}
+            />
+          )}
         </div>
-        {showLeaveDialog && (
-          <LeaveDomainDialog
-            onCancel={() => setShowLeaveDialog(false)}
-            onConfirm={() => { clearToken(); window.location.href = PUBLIC_SITE_URL; }}
-          />
-        )}
-        {showLoginModal && settings && goalDate && (
-          <TimeLeftClockModal
-            goalDate={goalDate}
-            format={settings.timeLeftClock.format}
-            onClose={() => setShowLoginModal(false)}
-          />
-        )}
-      </div>
+      </HourlyTrackerProvider>
     </SpotifyPlayerProvider>
   );
 }
