@@ -30,7 +30,7 @@ export function TodoItem({ todo, labels, onMarkDone, onUpdate }: TodoItemProps) 
     >
       <div className="flex-1 min-w-0">
         <span
-          className={`text-[length:var(--text-pill)] break-words ${
+          className={`block truncate text-[length:var(--text-pill)] ${
             todo.done ? "text-(--text-faint) line-through" : "text-(--fg)"
           }`}
         >
@@ -63,6 +63,7 @@ export function TodoItem({ todo, labels, onMarkDone, onUpdate }: TodoItemProps) 
           state keeps mouse-leave hiding instant, group-hover:delay-1000
           means the 1s hold only applies on the way in. */}
       <div className="pointer-events-none absolute left-3 top-full z-10 mt-1 w-max max-w-64 whitespace-pre-wrap rounded-md border-(--line) border-[0.5px] border-solid bg-(--card-alt) px-2.5 py-1.5 text-[length:var(--text-pill)] text-(--text-muted) opacity-0 shadow-lg transition-opacity delay-0 duration-150 group-hover:opacity-100 group-hover:delay-1000">
+        <p className="font-medium text-(--fg)">{todo.name}</p>
         <p className="whitespace-nowrap">Added: {formatDate(todo.dateAdded)}</p>
         {todo.targetDate && <p className="whitespace-nowrap">Due: {formatDate(todo.targetDate)}</p>}
         {todo.description && (
