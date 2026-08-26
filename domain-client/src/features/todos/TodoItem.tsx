@@ -1,4 +1,4 @@
-import { Check } from "lucide-react";
+import { Check, Undo2 } from "lucide-react";
 import { useState } from "react";
 import { LABEL_COLOR_VAR } from "../labels/colors";
 import type { Label } from "../labels/types";
@@ -9,6 +9,7 @@ interface TodoItemProps {
   todo: Todo;
   labels: Label[];
   onMarkDone: (id: string) => void;
+  onUndo: (id: string) => void;
   onUpdate: (
     id: string,
     input: { name: string; description: string | null; targetDate: string | null; labelId: string | null },
@@ -19,7 +20,11 @@ function formatDate(value: string) {
   return new Date(value).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
 }
 
-export function TodoItem({ todo, labels, onMarkDone, onUpdate }: TodoItemProps) {
+function formatDateShort(value: string) {
+  return new Date(value).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
+
+export function TodoItem({ todo, labels, onMarkDone, onUndo, onUpdate }: TodoItemProps) {
   const [editing, setEditing] = useState(false);
   const label = labels.find((l) => l.id === todo.labelId) ?? null;
 
@@ -34,6 +39,9 @@ export function TodoItem({ todo, labels, onMarkDone, onUpdate }: TodoItemProps) 
             todo.done ? "text-(--text-faint) line-through" : "text-(--fg)"
           }`}
         >
+          {todo.targetDate && (
+            <span className="text-(--text-faint)">{formatDateShort(todo.targetDate)} — </span>
+          )}
           {todo.name}
         </span>
       </div>
@@ -46,9 +54,19 @@ export function TodoItem({ todo, labels, onMarkDone, onUpdate }: TodoItemProps) 
       )}
 
       {todo.done ? (
-        <span className="flex items-center gap-1 shrink-0 text-[length:var(--text-pill)] text-(--green)">
-          <Check size={12} strokeWidth={3} />
-          Done
+        <span className="flex items-center gap-1 shrink-0">
+          <span className="flex items-center gap-1 text-[length:var(--text-pill)] text-(--green)">
+            <Check size={12} strokeWidth={3} />
+            Done
+          </span>
+          <button
+            onClick={() => onUndo(todo.id)}
+            aria-label="Undo completion"
+            title="Mark as not done"
+            className="flex items-center justify-center size-5 rounded-md text-(--text-faint) hover:text-(--fg) hover:bg-(--card-alt) transition-colors cursor-pointer"
+          >
+            <Undo2 size={12} />
+          </button>
         </span>
       ) : (
         <button
