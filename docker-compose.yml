@@ -6,6 +6,8 @@ services:
       POSTGRES_USER: portfolio
       POSTGRES_PASSWORD: portfolio
       POSTGRES_DB: portfolio
+      TZ: Asia/Kolkata
+      PGTZ: Asia/Kolkata
     ports:
       - "5433:5432"
     volumes:
@@ -20,6 +22,8 @@ services:
     build:
       context: ./server
     restart: unless-stopped
+    environment:
+      TZ: Asia/Kolkata
     env_file:
       - ./server/.env
     ports:

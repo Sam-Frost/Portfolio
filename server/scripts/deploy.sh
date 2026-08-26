@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Builds the Go binary for Linux and deploys it to the EC2 server, then
-# restarts it via systemd.
+# Backs up the production database, builds the Go binary for Linux, deploys
+# it to the EC2 server, then restarts it via systemd.
 #
 # Config is read from server/.env (see server/.env.example), falling back
 # to whatever is already set in the environment.
@@ -30,6 +30,31 @@ SSH_OPTS=(-o BatchMode=yes -o PreferredAuthentications=publickey)
 if [[ -n "$SSH_KEY" ]]; then
   SSH_OPTS+=(-i "$SSH_KEY")
 fi
+
+DB_NAME="${DB_NAME:-portfolio}"
+BACKUP_DIR="$SERVER_DIR/backups"
+
+# ─────────────────────────────────────────────
+# Back up the production database before touching anything else. This dump
+# is taken via `sudo -u postgres pg_dump` over SSH (peer-auth as the
+# `postgres` OS/DB role on the server), so it needs no DB password and works
+# regardless of what app-level DB user DATABASE_URL uses. If the backup
+# fails or comes back empty, the deploy aborts before the server is touched.
+# ─────────────────────────────────────────────
+echo "==> Backing up database '$DB_NAME' from $SSH_USER@$SERVER_IP"
+mkdir -p "$BACKUP_DIR"
+BACKUP_FILE="$BACKUP_DIR/${DB_NAME}_$(date +%Y%m%d_%H%M%S).sql"
+if ! ssh "${SSH_OPTS[@]}" "$SSH_USER@$SERVER_IP" "sudo -u postgres pg_dump --no-owner --no-privileges '$DB_NAME'" > "$BACKUP_FILE"; then
+  rm -f "$BACKUP_FILE"
+  echo "==> Database backup failed — aborting deploy. Nothing on the server was touched." >&2
+  exit 1
+fi
+if [[ ! -s "$BACKUP_FILE" ]]; then
+  rm -f "$BACKUP_FILE"
+  echo "==> Database backup came back empty — aborting deploy." >&2
+  exit 1
+fi
+echo "==> Backup saved to $BACKUP_FILE ($(du -h "$BACKUP_FILE" | cut -f1))"
 
 cd "$SERVER_DIR"
 
