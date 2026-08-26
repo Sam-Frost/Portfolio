@@ -6,6 +6,7 @@ import { LABEL_COLOR_VAR } from "../labels/colors";
 import type { Label } from "../labels/types";
 import { createTodo, fetchTodos, setTodoDone, updateTodo } from "./api";
 import { AddTodoForm } from "./AddTodoForm";
+import { DueTodayPanel } from "./DueTodayPanel";
 import { LabelCountChart } from "./LabelCountChart";
 import { LabelDistributionPie } from "./LabelDistributionPie";
 import { TodoItem } from "./TodoItem";
@@ -103,6 +104,14 @@ export function TodosPage() {
     setTodos((prev) => prev.map((t) => (t.id === id ? { ...t, done: true } : t)));
     setTodoDone(id, true).catch((err) => {
       setTodos((prev) => prev.map((t) => (t.id === id ? { ...t, done: false } : t)));
+      setError(err instanceof Error ? err.message : "Couldn't update todo.");
+    });
+  }
+
+  function handleUndo(id: string) {
+    setTodos((prev) => prev.map((t) => (t.id === id ? { ...t, done: false } : t)));
+    setTodoDone(id, false).catch((err) => {
+      setTodos((prev) => prev.map((t) => (t.id === id ? { ...t, done: true } : t)));
       setError(err instanceof Error ? err.message : "Couldn't update todo.");
     });
   }
@@ -326,7 +335,14 @@ export function TodosPage() {
             {!loading && visibleTodos.length > 0 && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-1.5 pb-2">
                 {visibleTodos.map((todo) => (
-                  <TodoItem key={todo.id} todo={todo} labels={labels} onMarkDone={handleMarkDone} onUpdate={handleUpdate} />
+                  <TodoItem
+                    key={todo.id}
+                    todo={todo}
+                    labels={labels}
+                    onMarkDone={handleMarkDone}
+                    onUndo={handleUndo}
+                    onUpdate={handleUpdate}
+                  />
                 ))}
               </div>
             )}
@@ -336,6 +352,7 @@ export function TodosPage() {
         <div className="lg:w-64 shrink-0 flex flex-col gap-4 min-h-0 overflow-y-auto themed-scrollbar">
           <LabelCountChart todos={todos} labels={labels} tab={tab} />
           <LabelDistributionPie todos={todos} labels={labels} tab={tab} />
+          <DueTodayPanel todos={todos} labels={labels} />
         </div>
       </div>
     </div>
