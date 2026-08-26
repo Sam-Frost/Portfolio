@@ -163,8 +163,13 @@ func main() {
 		spotifyRepo, spotifyClientID, spotifyClientSecret, spotifyRedirectURI, spotifyFrontendURL, jwtSecret,
 	)
 
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+
 	srv := &http.Server{
-		Addr:              ":8080",
+		Addr:              ":" + port,
 		Handler:           withCORS(allowedOrigin, withAuth(authService, router)),
 		ReadHeaderTimeout: 5 * time.Second,
 		ReadTimeout:       10 * time.Second,
