@@ -2,6 +2,7 @@ import { useState } from "react";
 import { NavLink } from "react-router-dom";
 import { ChevronDown } from "lucide-react";
 import { sections, SECTION_GROUPS, type SectionGroup } from "../data/domainSections";
+import { SpotifyWidget } from "../features/spotify/SpotifyWidget";
 
 const COLLAPSIBLE_GROUPS: SectionGroup[] = ["System"];
 
@@ -66,6 +67,8 @@ export function DomainSidebar() {
           </div>
         );
       })}
+
+      <SpotifyWidget />
     </aside>
   );
 }

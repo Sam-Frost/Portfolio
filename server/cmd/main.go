@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"log"
@@ -16,6 +17,7 @@ import (
 	"github.com/Sam-Frost/portfolio/internal/label"
 	"github.com/Sam-Frost/portfolio/internal/notepad"
 	"github.com/Sam-Frost/portfolio/internal/settings"
+	"github.com/Sam-Frost/portfolio/internal/spotify"
 	"github.com/Sam-Frost/portfolio/internal/todo"
 	"github.com/Sam-Frost/portfolio/internal/upskill"
 )
@@ -41,10 +43,14 @@ func withCORS(allowedOrigin string, next http.Handler) http.Handler {
 }
 
 // publicPaths bypass auth: the login endpoint (issues the token in the
-// first place) and the health check (used by container orchestration).
+// first place), the health check (used by container orchestration), and
+// the Spotify OAuth callback (hit by a browser redirect from Spotify,
+// which carries no bearer token — see internal/spotify's handler for how
+// that endpoint protects itself instead).
 var publicPaths = map[string]bool{
-	"/health":         true,
-	"/api/auth/login": true,
+	"/health":               true,
+	"/api/auth/login":       true,
+	"/api/spotify/callback": true,
 }
 
 // withAuth gates every route except publicPaths behind auth.RequireAuth.
@@ -61,7 +67,16 @@ func withAuth(authService *auth.Service, next http.Handler) http.Handler {
 
 // newRouter wires every feature's repository -> service -> handler and
 // registers its routes. Adding a feature means one more block here.
-func newRouter(authService *auth.Service, todoRepo todo.Repository, labelRepo label.Repository, settingsRepo settings.Repository, notepadRepo notepad.Repository, upskillRepo upskill.Repository) *http.ServeMux {
+func newRouter(
+	authService *auth.Service,
+	todoRepo todo.Repository,
+	labelRepo label.Repository,
+	settingsRepo settings.Repository,
+	notepadRepo notepad.Repository,
+	upskillRepo upskill.Repository,
+	spotifyRepo spotify.Repository,
+	spotifyClientID, spotifyClientSecret, spotifyRedirectURI, spotifyFrontendURL, jwtSecret string,
+) *http.ServeMux {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/health", healthCheck)
 
@@ -81,6 +96,10 @@ func newRouter(authService *auth.Service, todoRepo todo.Repository, labelRepo la
 
 	upskillService := upskill.NewService(upskillRepo)
 	upskill.NewHandler(upskillService).Register(mux)
+
+	spotifyClient := spotify.NewAPIClient(spotifyClientID, spotifyClientSecret, spotifyRedirectURI)
+	spotifyService := spotify.NewService(spotifyRepo, spotifyClient, []byte(jwtSecret))
+	spotify.NewHandler(spotifyService, spotifyFrontendURL).Register(mux)
 
 	return mux
 }
@@ -103,6 +122,19 @@ func main() {
 	jwtSecret := requireEnv("JWT_SECRET")
 	databaseURL := requireEnv("DATABASE_URL")
 
+	spotifyClientID := requireEnv("SPOTIFY_CLIENT_ID")
+	spotifyClientSecret := requireEnv("SPOTIFY_CLIENT_SECRET")
+	spotifyRedirectURI := requireEnv("SPOTIFY_REDIRECT_URI")
+	spotifyFrontendURL := requireEnv("SPOTIFY_FRONTEND_REDIRECT_URL")
+	spotifyTokenKey, err := base64.StdEncoding.DecodeString(requireEnv("SPOTIFY_TOKEN_KEY"))
+	if err != nil || len(spotifyTokenKey) != 32 {
+		log.Fatalf("SPOTIFY_TOKEN_KEY must be a base64-encoded 32-byte key (openssl rand -base64 32)")
+	}
+	spotifyCipher, err := spotify.NewCipher(spotifyTokenKey)
+	if err != nil {
+		log.Fatalf("spotify cipher: %v", err)
+	}
+
 	connectCtx, connectCancel := context.WithTimeout(context.Background(), 10*time.Second)
 	sqlDB, err := db.Connect(connectCtx, databaseURL)
 	connectCancel()
@@ -124,10 +156,16 @@ func main() {
 	settingsRepo := settings.NewPostgresRepository(sqlDB)
 	notepadRepo := notepad.NewPostgresRepository(sqlDB)
 	upskillRepo := upskill.NewPostgresRepository(sqlDB)
+	spotifyRepo := spotify.NewPostgresRepository(sqlDB, spotifyCipher)
+
+	router := newRouter(
+		authService, todoRepo, labelRepo, settingsRepo, notepadRepo, upskillRepo,
+		spotifyRepo, spotifyClientID, spotifyClientSecret, spotifyRedirectURI, spotifyFrontendURL, jwtSecret,
+	)
 
 	srv := &http.Server{
 		Addr:              ":8080",
-		Handler:           withCORS(allowedOrigin, withAuth(authService, newRouter(authService, todoRepo, labelRepo, settingsRepo, notepadRepo, upskillRepo))),
+		Handler:           withCORS(allowedOrigin, withAuth(authService, router)),
 		ReadHeaderTimeout: 5 * time.Second,
 		ReadTimeout:       10 * time.Second,
 		WriteTimeout:      10 * time.Second,
