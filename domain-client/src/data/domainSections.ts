@@ -28,7 +28,7 @@ export type Section =
 export const sections: Section[] = [
   { label: "Todos", icon: ListTodo, enabled: true, path: "todos", group: "Productivity" },
   { label: "Upskill", icon: GraduationCap, enabled: true, path: "upskill", group: "Productivity" },
-  { label: "Hourly Tracker", icon: Clock, enabled: false, group: "Productivity" },
+  { label: "Hourly Tracker", icon: Clock, enabled: true, path: "hourly-tracker", group: "Productivity" },
   { label: "Daily Work Tracker", icon: CalendarCheck, enabled: false, group: "Productivity" },
   { label: "Bad Habit Tracker", icon: Ban, enabled: false, group: "Productivity" },
 

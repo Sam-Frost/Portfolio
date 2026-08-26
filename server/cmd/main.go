@@ -20,6 +20,7 @@ import (
 	"github.com/Sam-Frost/portfolio/internal/spotify"
 	"github.com/Sam-Frost/portfolio/internal/todo"
 	"github.com/Sam-Frost/portfolio/internal/upskill"
+	"github.com/Sam-Frost/portfolio/internal/worksession"
 )
 
 func healthCheck(w http.ResponseWriter, req *http.Request) {
@@ -75,6 +76,7 @@ func newRouter(
 	notepadRepo notepad.Repository,
 	upskillRepo upskill.Repository,
 	spotifyRepo spotify.Repository,
+	workSessionRepo worksession.Repository,
 	spotifyClientID, spotifyClientSecret, spotifyRedirectURI, spotifyFrontendURL, jwtSecret string,
 ) *http.ServeMux {
 	mux := http.NewServeMux()
@@ -100,6 +102,9 @@ func newRouter(
 	spotifyClient := spotify.NewAPIClient(spotifyClientID, spotifyClientSecret, spotifyRedirectURI)
 	spotifyService := spotify.NewService(spotifyRepo, spotifyClient, []byte(jwtSecret))
 	spotify.NewHandler(spotifyService, spotifyFrontendURL).Register(mux)
+
+	workSessionService := worksession.NewService(workSessionRepo)
+	worksession.NewHandler(workSessionService).Register(mux)
 
 	return mux
 }
@@ -157,10 +162,11 @@ func main() {
 	notepadRepo := notepad.NewPostgresRepository(sqlDB)
 	upskillRepo := upskill.NewPostgresRepository(sqlDB)
 	spotifyRepo := spotify.NewPostgresRepository(sqlDB, spotifyCipher)
+	workSessionRepo := worksession.NewPostgresRepository(sqlDB)
 
 	router := newRouter(
 		authService, todoRepo, labelRepo, settingsRepo, notepadRepo, upskillRepo,
-		spotifyRepo, spotifyClientID, spotifyClientSecret, spotifyRedirectURI, spotifyFrontendURL, jwtSecret,
+		spotifyRepo, workSessionRepo, spotifyClientID, spotifyClientSecret, spotifyRedirectURI, spotifyFrontendURL, jwtSecret,
 	)
 
 	srv := &http.Server{
