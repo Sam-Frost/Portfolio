@@ -36,9 +36,9 @@ set +a
 SSH_USER="${SSH_USER:-root}"
 SSH_KEY="${SSH_KEY:-}"
 FRIEND_REMOTE_DIR="${FRIEND_REMOTE_DIR:-/root}"
-FRIEND_SERVICE_NAME="${FRIEND_SERVICE_NAME:-domain-friend}"
-FRIEND_BINARY_NAME="${FRIEND_BINARY_NAME:-domain-friend}"
-FRIEND_DB_NAME="${FRIEND_DB_NAME:-portfolio_friend}"
+FRIEND_SERVICE_NAME="${FRIEND_SERVICE_NAME:-domain-anjali}"
+FRIEND_BINARY_NAME="${FRIEND_BINARY_NAME:-domain-anjali}"
+FRIEND_DB_NAME="${FRIEND_DB_NAME:-portfolio_anjali}"
 FRIEND_PUBLIC_SITE_URL="${FRIEND_PUBLIC_SITE_URL:-https://$FRIEND_DOMAIN}"
 
 SSH_OPTS=(-o BatchMode=yes -o PreferredAuthentications=publickey)

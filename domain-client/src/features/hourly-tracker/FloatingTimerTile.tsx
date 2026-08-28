@@ -117,7 +117,7 @@ export function FloatingTimerTile({ session, remainingSeconds, onCancel }: Float
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
             <p className="text-[length:var(--text-pill)] uppercase tracking-wide text-(--text-faint)">
-              Hourly Tracker
+              Sessions
             </p>
             <p className="font-space text-xl text-(--fg) tabular-nums">{formatClock(remainingSeconds)}</p>
           </div>

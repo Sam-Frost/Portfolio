@@ -2,7 +2,7 @@ import { useRef } from "react";
 import me from "../assets/images/me.jpeg"
 import resume from "../assets/resume.pdf"
 import Button from "./Button";
-import { homeData } from "../data/home";
+import { useContent } from "../content/ContentContext";
 
 const ADMIN_UNLOCK_CLICKS = 7;
 const ADMIN_UNLOCK_WINDOW_MS = 20000;
@@ -20,6 +20,7 @@ function HeroSection() {
 }
 
 function BioSection() {
+  const homeData = useContent().summary;
   return (
     <div className="">
       <div className="inline-flex flex-row items-center gap-1.75 bg-(--green-bg) mb-4 font-medium rounded-2xl px-3 py-1 text-xs text-(--green-fg)">
@@ -42,6 +43,7 @@ function BioSection() {
 }
 
 function AvatarSection() {
+  const homeData = useContent().summary;
   const clickCount = useRef(0);
   const resetTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 

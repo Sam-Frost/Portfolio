@@ -9,6 +9,8 @@ type Note struct {
 	ID          string    `json:"id"`
 	Title       string    `json:"title"`
 	ContentHTML string    `json:"contentHtml"`
+	Pinned      bool      `json:"pinned"`
+	Archived    bool      `json:"archived"`
 	CreatedAt   time.Time `json:"createdAt"`
 	UpdatedAt   time.Time `json:"updatedAt"`
 }
@@ -16,8 +18,17 @@ type Note struct {
 type NoteSummary struct {
 	ID        string    `json:"id"`
 	Title     string    `json:"title"`
+	Pinned    bool      `json:"pinned"`
+	Archived  bool      `json:"archived"`
 	CreatedAt time.Time `json:"createdAt"`
 	UpdatedAt time.Time `json:"updatedAt"`
+}
+
+// ListFilter selects which slice of notes List returns. Archived == false
+// (the default) is the working set shown in the notepad; Archived == true
+// is the archive view. The two are always disjoint.
+type ListFilter struct {
+	Archived bool
 }
 
 // DefaultTitleLayout is used to title a note when it's created without one:
@@ -34,6 +45,8 @@ type CreateInput struct {
 type UpdateInput struct {
 	Title       *string `json:"title"`
 	ContentHTML *string `json:"contentHtml"`
+	Pinned      *bool   `json:"pinned"`
+	Archived    *bool   `json:"archived"`
 }
 
 func updatedAtNow() time.Time { return time.Now().UTC() }

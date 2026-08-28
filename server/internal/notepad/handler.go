@@ -23,7 +23,9 @@ func (h *Handler) Register(mux *http.ServeMux) {
 }
 
 func (h *Handler) list(w http.ResponseWriter, r *http.Request) {
-	notes, err := h.service.List(r.Context())
+	filter := ListFilter{Archived: r.URL.Query().Get("archived") == "true"}
+
+	notes, err := h.service.List(r.Context(), filter)
 	if err != nil {
 		httpx.WriteError(w, err)
 		return

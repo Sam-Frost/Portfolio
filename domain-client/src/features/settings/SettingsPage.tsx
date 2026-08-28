@@ -2,9 +2,15 @@ import { useEffect, useState } from "react";
 import { sections } from "../../data/domainSections";
 import { fetchSettings, updateSettings } from "./api";
 import { LabelsSection } from "./LabelsSection";
+import { DocumentLabelsSection } from "./DocumentLabelsSection";
+import { FoodLibrarySection } from "./FoodLibrarySection";
 import type { Settings, TimeLeftFormat } from "./types";
 
-const settingsSections = sections.filter((section) => section.label !== "Settings");
+// "Fitness" renders its own dedicated section (the shared food library)
+// below, so it's excluded from the generic "No settings yet" loop.
+const settingsSections = sections.filter(
+  (section) => section.label !== "Settings" && section.label !== "Fitness",
+);
 
 // datetime-local inputs work in "local wall clock" strings with no timezone;
 // these convert to/from the RFC3339 UTC strings the backend stores.
@@ -90,6 +96,20 @@ export function SettingsPage() {
           <section className="bg-(--card) border-(--line) border-[0.5px] border-solid rounded-xl p-5">
             <h2 className="text-sm font-space font-medium text-(--fg) mb-3">Todos — Labels</h2>
             <LabelsSection />
+          </section>
+
+          {/* Documents has its own label set (server/internal/documentlabel),
+              managed here just like the todo labels above. */}
+          <section className="bg-(--card) border-(--line) border-[0.5px] border-solid rounded-xl p-5">
+            <h2 className="text-sm font-space font-medium text-(--fg) mb-3">Documents — Labels</h2>
+            <DocumentLabelsSection />
+          </section>
+
+          {/* The fitness food library has its own /api/fitness/foods CRUD and
+              is shared across every cycle — managed here, not per-cycle. */}
+          <section className="bg-(--card) border-(--line) border-[0.5px] border-solid rounded-xl p-5">
+            <h2 className="text-sm font-space font-medium text-(--fg) mb-3">Fitness — Food library</h2>
+            <FoodLibrarySection />
           </section>
 
           {settings && (

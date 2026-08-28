@@ -28,8 +28,8 @@ func (s *Service) Create(ctx context.Context, input CreateInput) (Note, error) {
 	return s.repo.Create(ctx, Note{Title: title, CreatedAt: now, UpdatedAt: now})
 }
 
-func (s *Service) List(ctx context.Context) ([]NoteSummary, error) {
-	return s.repo.List(ctx)
+func (s *Service) List(ctx context.Context, filter ListFilter) ([]NoteSummary, error) {
+	return s.repo.List(ctx, filter)
 }
 
 func (s *Service) Get(ctx context.Context, id string) (Note, error) {

@@ -33,7 +33,7 @@ export function TopicCard({ topic, onUpdate, onDelete }: TopicCardProps) {
       className="group relative flex flex-col gap-2 bg-(--card) border-(--line) border-[0.5px] border-solid rounded-xl px-4 py-3 cursor-pointer hover:border-(--line-strong) transition-colors"
     >
       <div className="flex items-start justify-between gap-2">
-        <span className="text-[length:var(--text-caption)] text-(--fg) font-medium truncate">{topic.name}</span>
+        <span className="min-w-0 flex-1 truncate text-[length:var(--text-caption)] text-(--fg) font-medium">{topic.name}</span>
         <button
           onClick={(e) => {
             e.stopPropagation();

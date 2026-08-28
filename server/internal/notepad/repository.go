@@ -8,7 +8,7 @@ import "context"
 // because List deliberately omits ContentHTML.
 type Repository interface {
 	Create(ctx context.Context, n Note) (Note, error)
-	List(ctx context.Context) ([]NoteSummary, error)
+	List(ctx context.Context, filter ListFilter) ([]NoteSummary, error)
 	Get(ctx context.Context, id string) (Note, error)
 	Update(ctx context.Context, id string, input UpdateInput) (Note, error)
 	Delete(ctx context.Context, id string) error

@@ -1,7 +1,9 @@
-import { blogs } from "../data/blog";
+import { useContent } from "../content/ContentContext";
+import { visibleSorted } from "../content/types";
 import Blog from "./Blog";
 
 function BlogSection() {
+  const blogs = visibleSorted(useContent().blogs);
   return (
     <div className="pb-11">
       <div className="flex flex-row items-baseline justify-between mb-4.5">
@@ -9,15 +11,16 @@ function BlogSection() {
         <div className="text-[length:var(--text-caption)] font-medium text-(--gold) cursor-pointer hover:text-(--gold-deep)">All Posts →</div>
       </div>
       <div>
-        {blogs.map((blog, index) => <Blog
-          key={index}
-          title={blog.title}
-          fileName={blog.fileName}
-          readTime={blog.readTime}
-          genere={blog.genere}
-          date={blog.date}
-          content={blog.content}
-        />)}
+        {blogs.map((blog) => (
+          <Blog
+            key={blog.id}
+            title={blog.title}
+            slug={blog.slug}
+            readTime={blog.readTime}
+            genre={blog.genre}
+            date={blog.date}
+          />
+        ))}
       </div>
     </div>
   );

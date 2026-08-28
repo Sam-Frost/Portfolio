@@ -15,6 +15,11 @@ import { UpskillTopicPage } from "./features/upskill/UpskillTopicPage";
 import { DiaryCalendarPage } from "./features/diary/DiaryCalendarPage";
 import { DiaryEntryPage } from "./features/diary/DiaryEntryPage";
 import { HourlyTrackerPage } from "./features/hourly-tracker/HourlyTrackerPage";
+import { FitnessCyclesPage } from "./features/fitness/FitnessCyclesPage";
+import { FitnessCyclePage } from "./features/fitness/FitnessCyclePage";
+import { ExerciseDetailPage } from "./features/fitness/ExerciseDetailPage";
+import { DocumentsPage } from "./features/documents/DocumentsPage";
+import { CmsPage } from "./features/cms/CmsPage";
 
 export const router = createBrowserRouter([
   {
@@ -48,9 +53,14 @@ export const router = createBrowserRouter([
           {
             path: "hourly-tracker",
             element: <HourlyTrackerPage />,
-            handle: { title: "Hourly Tracker" },
+            handle: { title: "Sessions" },
           },
           { path: "settings", element: <SettingsPage /> },
+          {
+            path: "cms",
+            element: <CmsPage />,
+            handle: { title: "CMS", subtitle: "Public site content", fullWidth: true },
+          },
           {
             path: "notepad",
             element: <NotepadPage />,
@@ -70,6 +80,26 @@ export const router = createBrowserRouter([
             path: "diary/:date",
             element: <DiaryEntryPage />,
             handle: { title: "Personal Diary" },
+          },
+          {
+            path: "fitness",
+            element: <FitnessCyclesPage />,
+            handle: { title: "Fitness" },
+          },
+          {
+            path: "fitness/:cycleId",
+            element: <FitnessCyclePage />,
+            handle: { title: "Fitness", fullWidth: true },
+          },
+          {
+            path: "fitness/exercises/:exerciseId",
+            element: <ExerciseDetailPage />,
+            handle: { title: "Fitness" },
+          },
+          {
+            path: "documents",
+            element: <DocumentsPage />,
+            handle: { title: "Documents", fullWidth: true },
           },
         ],
       },

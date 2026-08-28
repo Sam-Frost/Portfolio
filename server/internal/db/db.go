@@ -12,17 +12,26 @@ import (
 	"fmt"
 	"sort"
 
-	_ "github.com/jackc/pgx/v5/stdlib"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/stdlib"
 )
 
 //go:embed migrations/*.sql
 var migrationsFS embed.FS
 
+// Connect opens the Postgres pool with a query tracer attached, so every SQL
+// statement is logged (errors and slow queries always; all queries when
+// LOG_LEVEL=debug) and correlated to its HTTP request via the request_id on
+// the context. DB_SLOW_QUERY_MS tunes the slow-query threshold (default 200,
+// 0 disables the WARN line).
 func Connect(ctx context.Context, databaseURL string) (*sql.DB, error) {
-	sqlDB, err := sql.Open("pgx", databaseURL)
+	connConfig, err := pgx.ParseConfig(databaseURL)
 	if err != nil {
-		return nil, fmt.Errorf("open database: %w", err)
+		return nil, fmt.Errorf("parse database url: %w", err)
 	}
+	connConfig.Tracer = queryTracer{slow: slowQueryThreshold()}
+
+	sqlDB := sql.OpenDB(stdlib.GetConnector(*connConfig))
 
 	if err := sqlDB.PingContext(ctx); err != nil {
 		sqlDB.Close()

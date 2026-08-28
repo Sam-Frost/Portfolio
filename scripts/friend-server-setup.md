@@ -26,8 +26,8 @@ she does (or a bug in her instance) can touch your data.
 ```bash
 ssh root@2.29.3.177
 
-sudo -u postgres psql -c "CREATE ROLE friend_app WITH LOGIN PASSWORD 'CHOOSE_A_STRONG_PASSWORD_HERE';"
-sudo -u postgres psql -c "CREATE DATABASE portfolio_friend OWNER friend_app;"
+sudo -u postgres psql -c "CREATE ROLE anjalibansal WITH LOGIN PASSWORD 'CHOOSE_A_STRONG_PASSWORD_HERE';"
+sudo -u postgres psql -c "CREATE DATABASE portfolio_anjali OWNER anjalibansal;"
 ```
 
 Pick a real password and keep it — it goes into her env file next. (The
@@ -48,15 +48,15 @@ calls conditional) — say the word and I'll do it in a follow-up rather
 than guessing at it here. For now, the setup below assumes you'll fill in
 real values.
 
-## 3. Backend env file — `/etc/domain-friend/domain.env`
+## 3. Backend env file — `/etc/domain-anjali/domain.env`
 
 ```bash
-sudo mkdir -p /etc/domain-friend
-sudo tee /etc/domain-friend/domain.env > /dev/null <<'EOF'
+sudo mkdir -p /etc/domain-anjali
+sudo tee /etc/domain-anjali/domain.env > /dev/null <<'EOF'
 PORT=8081
 DOMAIN_PASSWORD=CHOOSE_A_PASSWORD_FOR_HER_GATE
 JWT_SECRET=REPLACE_WITH_output_of_openssl_rand_-base64_32
-DATABASE_URL=postgres://friend_app:CHOOSE_A_STRONG_PASSWORD_HERE@localhost:5432/portfolio_friend?sslmode=disable
+DATABASE_URL=postgres://anjalibansal:CHOOSE_A_STRONG_PASSWORD_HERE@localhost:5432/portfolio_anjali?sslmode=disable
 ALLOWED_ORIGIN=https://HER_DOMAIN
 
 SPOTIFY_CLIENT_ID=
@@ -64,42 +64,49 @@ SPOTIFY_CLIENT_SECRET=
 SPOTIFY_REDIRECT_URI=https://HER_DOMAIN/api/spotify/callback
 SPOTIFY_FRONTEND_REDIRECT_URL=https://HER_DOMAIN/settings
 SPOTIFY_TOKEN_KEY=REPLACE_WITH_output_of_openssl_rand_-base64_32
+
+# Document Storage — no S3 for her instance, so bytes live on the box's
+# disk and are served back through the backend. PUBLIC_API_URL must be her
+# real domain so the signed blob URLs the browser hits resolve.
+DOCUMENTS_LOCAL_DIR=/var/lib/domain-anjali/documents
+PUBLIC_API_URL=https://HER_DOMAIN
 EOF
-sudo chmod 600 /etc/domain-friend/domain.env
+sudo chmod 600 /etc/domain-anjali/domain.env
+sudo mkdir -p /var/lib/domain-anjali/documents
 ```
 
 Generate the two secrets with `openssl rand -base64 32` each — use
 **different** values than the main app's `JWT_SECRET`/`SPOTIFY_TOKEN_KEY`;
 never reuse those across instances.
 
-## 4. systemd service — `domain-friend`
+## 4. systemd service — `domain-anjali`
 
 ```bash
-sudo tee /etc/systemd/system/domain-friend.service > /dev/null <<'EOF'
+sudo tee /etc/systemd/system/domain-anjali.service > /dev/null <<'EOF'
 [Unit]
-Description=Domain Server (Friend)
+Description=Domain Server (Anjali)
 After=network.target
 
 [Service]
 Type=simple
 User=root
 WorkingDirectory=/root
-ExecStart=/root/domain-friend
+ExecStart=/root/domain-anjali
 
 Restart=always
 RestartSec=3
 
-EnvironmentFile=/etc/domain-friend/domain.env
+EnvironmentFile=/etc/domain-anjali/domain.env
 
 [Install]
 WantedBy=multi-user.target
 EOF
 sudo systemctl daemon-reload
-sudo systemctl enable domain-friend
+sudo systemctl enable domain-anjali
 ```
 
 Leave it stopped for now — it won't start successfully until the binary
-actually exists at `/root/domain-friend`, which the first
+actually exists at `/root/domain-anjali`, which the first
 `deploy-friend.sh` run provides.
 
 ## 5. Static site directory for Caddy
@@ -147,4 +154,4 @@ From your machine, copy `scripts/deploy-friend.env.example` to
 `scripts/deploy-friend.env`, fill in `FRIEND_DOMAIN` /
 `FRIEND_STATIC_REMOTE_DIR` (`/var/www/HER_DOMAIN`) / `SERVER_IP`, then run
 `scripts/deploy-friend.sh`. That builds and ships both the backend binary
-and the frontend build, and starts `domain-friend` for the first time.
+and the frontend build, and starts `domain-anjali` for the first time.

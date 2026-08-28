@@ -28,18 +28,29 @@ func (r *MemoryRepository) Create(_ context.Context, n Note) (Note, error) {
 	return n, nil
 }
 
-func (r *MemoryRepository) List(_ context.Context) ([]NoteSummary, error) {
+func (r *MemoryRepository) List(_ context.Context, filter ListFilter) ([]NoteSummary, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
 	summaries := make([]NoteSummary, 0, len(r.notes))
 	for _, n := range r.notes {
-		if r.deleted[n.ID] {
+		if r.deleted[n.ID] || n.Archived != filter.Archived {
 			continue
 		}
-		summaries = append(summaries, NoteSummary{ID: n.ID, Title: n.Title, CreatedAt: n.CreatedAt, UpdatedAt: n.UpdatedAt})
+		summaries = append(summaries, NoteSummary{
+			ID: n.ID, Title: n.Title, Pinned: n.Pinned, Archived: n.Archived,
+			CreatedAt: n.CreatedAt, UpdatedAt: n.UpdatedAt,
+		})
 	}
-	sort.Slice(summaries, func(i, j int) bool { return summaries[i].CreatedAt.After(summaries[j].CreatedAt) })
+	// Pinned notes float to the top of the working set; within each group,
+	// newest first. The archive view has no pinned notes (archiving clears
+	// the pin) so it's a plain newest-first list.
+	sort.Slice(summaries, func(i, j int) bool {
+		if summaries[i].Pinned != summaries[j].Pinned {
+			return summaries[i].Pinned
+		}
+		return summaries[i].CreatedAt.After(summaries[j].CreatedAt)
+	})
 	return summaries, nil
 }
 
@@ -68,6 +79,16 @@ func (r *MemoryRepository) Update(_ context.Context, noteID string, input Update
 	}
 	if input.ContentHTML != nil {
 		n.ContentHTML = *input.ContentHTML
+	}
+	if input.Pinned != nil {
+		n.Pinned = *input.Pinned
+	}
+	if input.Archived != nil {
+		n.Archived = *input.Archived
+		if n.Archived {
+			// An archived note can't also be pinned to the working set.
+			n.Pinned = false
+		}
 	}
 	n.UpdatedAt = updatedAtNow()
 

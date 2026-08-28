@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
+import { Archive, ArchiveRestore, ArrowLeft, Star } from "lucide-react";
 import { fetchNote, updateNote } from "./api";
 import { RichTextEditor } from "../../components/domain/RichTextEditor";
 import type { Note } from "./types";
@@ -80,6 +80,23 @@ export function NoteEditorPage() {
     scheduleSave({ contentHtml: html });
   }
 
+  function handleTogglePin() {
+    if (!id || !note) return;
+    const nextPinned = !note.pinned;
+    setNote({ ...note, pinned: nextPinned });
+    updateNote(id, { pinned: nextPinned })
+      .then((updated) => setNote(updated))
+      .catch(() => setNote((prev) => (prev ? { ...prev, pinned: !nextPinned } : prev)));
+  }
+
+  function handleToggleArchive() {
+    if (!id || !note) return;
+    const nextArchived = !note.archived;
+    updateNote(id, { archived: nextArchived })
+      .then(() => navigate("/notepad"))
+      .catch(() => setNote((prev) => (prev ? { ...prev, archived: !nextArchived } : prev)));
+  }
+
   if (loading) {
     return <div className="text-(--text-faint) text-[length:var(--text-caption)]">Loading note...</div>;
   }
@@ -105,9 +122,30 @@ export function NoteEditorPage() {
           All notes
         </button>
 
-        <div className="flex items-center gap-1.5 text-[length:var(--text-pill)] text-(--text-faint)">
-          <span className={`size-2 rounded-full shrink-0 ${dotClass}`} />
-          {label}
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1.5 text-[length:var(--text-pill)] text-(--text-faint)">
+            <span className={`size-2 rounded-full shrink-0 ${dotClass}`} />
+            {label}
+          </div>
+
+          <button
+            onClick={handleTogglePin}
+            aria-label={note.pinned ? "Unpin note" : "Pin note"}
+            aria-pressed={note.pinned}
+            className={`transition-colors cursor-pointer ${
+              note.pinned ? "text-(--label-yellow)" : "text-(--text-faint) hover:text-(--label-yellow)"
+            }`}
+          >
+            <Star size={15} className={note.pinned ? "fill-(--label-yellow)" : ""} />
+          </button>
+
+          <button
+            onClick={handleToggleArchive}
+            aria-label={note.archived ? "Unarchive note" : "Archive note"}
+            className="text-(--text-faint) hover:text-(--fg) transition-colors cursor-pointer"
+          >
+            {note.archived ? <ArchiveRestore size={15} /> : <Archive size={15} />}
+          </button>
         </div>
       </div>
 

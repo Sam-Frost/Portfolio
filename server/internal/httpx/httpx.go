@@ -20,11 +20,21 @@ func WriteJSON(w http.ResponseWriter, status int, body any) {
 	}
 }
 
+// errorRecorder is implemented by the request-scoped ResponseWriter wrapper
+// (internal/reqlog). WriteError hands it the real error so the per-request
+// log line can carry the server-side cause that the client response hides —
+// without every handler having to thread a logger or a request in.
+type errorRecorder interface{ RecordError(error) }
+
 // WriteError maps err to an HTTP status and writes {"error": "..."}.
 // Any *apperr.Error maps by its Kind; anything else (an error a service
 // forgot to wrap, a genuinely unexpected failure) is a 500 with a generic
 // message so internals never leak to the client.
 func WriteError(w http.ResponseWriter, err error) {
+	if rec, ok := w.(errorRecorder); ok {
+		rec.RecordError(err)
+	}
+
 	var appErr *apperr.Error
 	if errors.As(err, &appErr) {
 		WriteJSON(w, statusForKind(appErr.Kind), map[string]string{"error": appErr.Message})

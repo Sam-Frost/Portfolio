@@ -89,12 +89,17 @@ fi
 # 2. Sync to S3
 #    - Long cache for hashed static assets
 #    - No cache for index.html so users get new deploys immediately
+#    - content.json is NOT part of the build: it's written to this same
+#      prefix by the CMS "Publish" flow (server/internal/cms). Exclude it
+#      from --delete so a code deploy doesn't wipe published site content.
 # ─────────────────────────────────────────────
 info "Uploading hashed assets to $S3_DEST ..."
 aws s3 sync "$BUILD_DIR" "$S3_DEST" \
   --delete \
   --exclude "index.html" \
   --exclude "*.map" \
+  --exclude "content.json" \
+  --exclude "content/*" \
   --cache-control "public,max-age=31536000,immutable"
 
 info "Uploading index.html (no-cache)..."

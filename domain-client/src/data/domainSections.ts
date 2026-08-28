@@ -2,14 +2,15 @@ import {
   KeyRound,
   FolderLock,
   ListTodo,
-  CalendarCheck,
+  // CalendarCheck, // unused while Daily Work Tracker is disabled — see below
   LayoutTemplate,
   Sparkles,
   BookOpen,
-  PenTool,
+  // PenTool, // unused while Drawing Board is disabled — see below
   Clock,
+  Dumbbell,
   StickyNote,
-  Ban,
+  // Ban, // unused while Bad Habit Tracker is disabled — see below
   Settings,
   GraduationCap,
   type LucideIcon,
@@ -28,17 +29,20 @@ export type Section =
 export const sections: Section[] = [
   { label: "Todos", icon: ListTodo, enabled: true, path: "todos", group: "Productivity" },
   { label: "Notepad", icon: StickyNote, enabled: true, path: "notepad", group: "Productivity" },
-  { label: "Hourly Tracker", icon: Clock, enabled: true, path: "hourly-tracker", group: "Productivity" },
-  { label: "Daily Work Tracker", icon: CalendarCheck, enabled: false, group: "Productivity" },
-  { label: "Bad Habit Tracker", icon: Ban, enabled: false, group: "Productivity" },
+  { label: "Sessions", icon: Clock, enabled: true, path: "hourly-tracker", group: "Productivity" },
+  // Disabled for now — uncomment to bring back.
+  // { label: "Daily Work Tracker", icon: CalendarCheck, enabled: false, group: "Productivity" },
+  // { label: "Bad Habit Tracker", icon: Ban, enabled: false, group: "Productivity" },
 
-  { label: "Upskill", icon: GraduationCap, enabled: true, path: "upskill", group: "Personal" },
-  { label: "Drawing Board", icon: PenTool, enabled: false, group: "Personal" },
   { label: "Personal Diary", icon: BookOpen, enabled: true, path: "diary", group: "Personal" },
+  { label: "Upskill", icon: GraduationCap, enabled: true, path: "upskill", group: "Personal" },
+  { label: "Fitness", icon: Dumbbell, enabled: true, path: "fitness", group: "Personal" },
+  // Disabled for now — uncomment to bring back.
+  // { label: "Drawing Board", icon: PenTool, enabled: false, group: "Personal" },
 
   { label: "Claude Skills", icon: Sparkles, enabled: false, group: "System" },
-  { label: "CMS", icon: LayoutTemplate, enabled: false, group: "System" },
+  { label: "CMS", icon: LayoutTemplate, enabled: true, path: "cms", group: "System" },
   { label: "Credential Manager", icon: KeyRound, enabled: true, path: "credentials", group: "System" },
-  { label: "Document Storage", icon: FolderLock, enabled: false, group: "System" },
+  { label: "Documents", icon: FolderLock, enabled: true, path: "documents", group: "System" },
   { label: "Settings", icon: Settings, enabled: true, path: "settings", group: "System" },
 ];
