@@ -7,11 +7,13 @@ import (
 
 // FinishInput is what both Complete and Cancel boil down to at the
 // persistence layer: a transition off "running" to a terminal status, with
-// an end time, elapsed minutes, and an optional note. Shaped like
-// todo.UpdateInput — fields a SQL "UPDATE ... SET ... WHERE id = $1 AND
-// status = 'running'" can use directly — rather than a mutation closure.
+// an end time, elapsed minutes, the ticked-off goals, and an optional
+// closing note. Shaped like todo.UpdateInput — fields a SQL "UPDATE ...
+// SET ... WHERE id = $1 AND status = 'running'" can use directly — rather
+// than a mutation closure.
 type FinishInput struct {
 	Status        Status
+	Goals         []Goal
 	Note          *string
 	EndedAt       time.Time
 	ActualMinutes int

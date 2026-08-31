@@ -47,6 +47,21 @@ func (s *Service) Start(ctx context.Context, input StartInput) (WorkSession, err
 		return WorkSession{}, apperr.InvalidInput("plannedMinutes must be positive")
 	}
 
+	category := input.Category
+	if category == "" {
+		category = CategoryProfessional
+	}
+	if !category.valid() {
+		return WorkSession{}, apperr.InvalidInput("category must be personal or professional")
+	}
+
+	goals := make([]Goal, 0, len(input.Goals))
+	for _, text := range input.Goals {
+		if trimmed := strings.TrimSpace(text); trimmed != "" {
+			goals = append(goals, Goal{Text: trimmed})
+		}
+	}
+
 	_, running, err := s.repo.GetRunning(ctx)
 	if err != nil {
 		return WorkSession{}, err
@@ -57,8 +72,11 @@ func (s *Service) Start(ctx context.Context, input StartInput) (WorkSession, err
 
 	return s.repo.Create(ctx, WorkSession{
 		PlannedMinutes: input.PlannedMinutes,
+		Category:       category,
 		StartedAt:      time.Now().UTC(),
 		Status:         StatusRunning,
+		Goals:          goals,
+		StartNote:      trimmedNote(input.StartNote),
 	})
 }
 
@@ -68,34 +86,43 @@ func (s *Service) Current(ctx context.Context) (WorkSession, bool, error) {
 	return s.repo.GetRunning(ctx)
 }
 
-func (s *Service) Complete(ctx context.Context, id string, input CompleteInput) (WorkSession, error) {
-	note := strings.TrimSpace(input.Note)
-	if note == "" {
-		return WorkSession{}, apperr.InvalidInput("note is required to complete a session")
-	}
-
+// Complete logs a session that ran its full planned duration. Its end time
+// is fixed at StartedAt + PlannedMinutes — the moment the timer actually
+// elapsed — NOT time.Now(): the details can be logged minutes or hours
+// later (the "time's up" dialog may sit open), and that lag must not
+// inflate the session or shift which day it lands on.
+func (s *Service) Complete(ctx context.Context, id string, body FinishBody) (WorkSession, error) {
 	running, err := s.mustBeRunning(ctx, id)
 	if err != nil {
 		return WorkSession{}, err
 	}
 
-	now := time.Now().UTC()
+	goals := reconcileGoals(running.Goals, body.Goals)
+	note := trimmedNote(body.Note)
+	if len(goals) == 0 && note == nil {
+		return WorkSession{}, apperr.InvalidInput("log at least one goal or a note to complete a session")
+	}
+
+	// Cap at now for the (UI-unreachable) case of completing before the
+	// timer elapsed, so end time never runs ahead of the clock.
+	endedAt := running.StartedAt.Add(time.Duration(running.PlannedMinutes) * time.Minute)
+	if now := time.Now().UTC(); endedAt.After(now) {
+		endedAt = now
+	}
+
 	return s.repo.Finish(ctx, id, FinishInput{
 		Status:        StatusCompleted,
-		Note:          &note,
-		EndedAt:       now,
-		ActualMinutes: elapsedMinutes(running.StartedAt, now),
+		Goals:         goals,
+		Note:          note,
+		EndedAt:       endedAt,
+		ActualMinutes: elapsedMinutes(running.StartedAt, endedAt),
 	})
 }
 
-func (s *Service) Cancel(ctx context.Context, id string, input CancelInput) (WorkSession, error) {
-	var note *string
-	if input.Note != nil {
-		if trimmed := strings.TrimSpace(*input.Note); trimmed != "" {
-			note = &trimmed
-		}
-	}
-
+// Cancel logs a session cut short. Its end time is time.Now() — the moment
+// the user hits cancel — since a cancel is confirmed on the spot, not left
+// pending like the completion dialog.
+func (s *Service) Cancel(ctx context.Context, id string, body FinishBody) (WorkSession, error) {
 	running, err := s.mustBeRunning(ctx, id)
 	if err != nil {
 		return WorkSession{}, err
@@ -104,10 +131,37 @@ func (s *Service) Cancel(ctx context.Context, id string, input CancelInput) (Wor
 	now := time.Now().UTC()
 	return s.repo.Finish(ctx, id, FinishInput{
 		Status:        StatusCancelled,
-		Note:          note,
+		Goals:         reconcileGoals(running.Goals, body.Goals),
+		Note:          trimmedNote(body.Note),
 		EndedAt:       now,
 		ActualMinutes: elapsedMinutes(running.StartedAt, now),
 	})
+}
+
+// trimmedNote returns a trimmed *string, or nil when the note is empty.
+func trimmedNote(note string) *string {
+	trimmed := strings.TrimSpace(note)
+	if trimmed == "" {
+		return nil
+	}
+	return &trimmed
+}
+
+// reconcileGoals carries the goal text set at start forward, applying the
+// done flags the client sends back. It matches on text (order-independent,
+// tolerant of the client dropping/reordering rows) and ignores goals the
+// client invents that weren't set at start.
+func reconcileGoals(started, submitted []Goal) []Goal {
+	done := make(map[string]bool, len(submitted))
+	for _, g := range submitted {
+		done[strings.TrimSpace(g.Text)] = g.Done
+	}
+
+	result := make([]Goal, 0, len(started))
+	for _, g := range started {
+		result = append(result, Goal{Text: g.Text, Done: done[g.Text]})
+	}
+	return result
 }
 
 // mustBeRunning confirms id is the currently running session, so
@@ -153,13 +207,23 @@ func (s *Service) DailySummary(ctx context.Context, from, to time.Time) ([]Daily
 		return nil, err
 	}
 
-	totals := make(map[string]int)
+	type dayTotals struct{ professional, personal int }
+	totals := make(map[string]*dayTotals)
 	for _, sess := range sessions {
 		if sess.EndedAt == nil || sess.ActualMinutes == nil {
 			continue // still running — nothing finished to attribute yet
 		}
 		for date, minutes := range splitByISTDay(sess.StartedAt, *sess.EndedAt, *sess.ActualMinutes) {
-			totals[date] += minutes
+			dt := totals[date]
+			if dt == nil {
+				dt = &dayTotals{}
+				totals[date] = dt
+			}
+			if sess.Category == CategoryPersonal {
+				dt.personal += minutes
+			} else {
+				dt.professional += minutes
+			}
 		}
 	}
 
@@ -171,7 +235,13 @@ func (s *Service) DailySummary(ctx context.Context, from, to time.Time) ([]Daily
 
 	summaries := make([]DailySummary, 0, len(dates))
 	for _, d := range dates {
-		summaries = append(summaries, DailySummary{Date: d, WorkedMinutes: totals[d]})
+		dt := totals[d]
+		summaries = append(summaries, DailySummary{
+			Date:                d,
+			WorkedMinutes:       dt.professional + dt.personal,
+			ProfessionalMinutes: dt.professional,
+			PersonalMinutes:     dt.personal,
+		})
 	}
 	return summaries, nil
 }

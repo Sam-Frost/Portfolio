@@ -1,15 +1,19 @@
 import { useState, type KeyboardEvent } from "react";
 import { formatMinutes } from "./dateUtils";
-import type { WorkSession } from "./types";
+import { GoalChecklist } from "./GoalChecklist";
+import type { FinishPayload, Goal, WorkSession } from "./types";
 
 interface CancelSessionDialogProps {
   session: WorkSession;
   elapsedSeconds: number;
   onCancel: () => void;
-  onConfirm: (note?: string) => Promise<void>;
+  onConfirm: (payload: FinishPayload) => Promise<void>;
 }
 
 export function CancelSessionDialog({ session, elapsedSeconds, onCancel, onConfirm }: CancelSessionDialogProps) {
+  const [goals, setGoals] = useState<Goal[]>(() =>
+    (session.goals ?? []).map((g) => ({ text: g.text, done: g.done })),
+  );
   const [note, setNote] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -20,11 +24,15 @@ export function CancelSessionDialog({ session, elapsedSeconds, onCancel, onConfi
     if (e.key === "Escape" && !submitting) onCancel();
   }
 
+  function toggleGoal(index: number) {
+    setGoals((prev) => prev.map((g, i) => (i === index ? { ...g, done: !g.done } : g)));
+  }
+
   async function handleConfirm() {
     setSubmitting(true);
     setError(null);
     try {
-      await onConfirm(note.trim() || undefined);
+      await onConfirm({ goals, note: note.trim() });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Couldn't cancel the session.");
       setSubmitting(false);
@@ -48,10 +56,19 @@ export function CancelSessionDialog({ session, elapsedSeconds, onCancel, onConfi
         <h2 className="text-[length:var(--text-caption)] text-(--fg) mb-1.5">Cancel this session?</h2>
         <p className="text-[length:var(--text-pill)] text-(--text-muted) mb-4">
           Planned for {formatMinutes(session.plannedMinutes)}, ran for {formatMinutes(elapsedMinutes)} so far. This
-          will be logged as cancelled.
+          will be logged as cancelled, ending now.
         </p>
 
-        <label className="block text-[length:var(--text-pill)] text-(--text-muted) mb-1">Note (optional)</label>
+        {goals.length > 0 && (
+          <>
+            <p className="text-[length:var(--text-pill)] text-(--text-muted) mb-1.5">Goals</p>
+            <div className="mb-4">
+              <GoalChecklist goals={goals} onToggle={toggleGoal} disabled={submitting} />
+            </div>
+          </>
+        )}
+
+        <label className="block text-[length:var(--text-pill)] text-(--text-muted) mb-1">Remarks (optional)</label>
         <textarea
           value={note}
           onChange={(e) => setNote(e.target.value)}

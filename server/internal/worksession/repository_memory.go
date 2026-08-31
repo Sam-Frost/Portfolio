@@ -51,6 +51,7 @@ func (r *MemoryRepository) Finish(_ context.Context, sessionID string, input Fin
 	}
 
 	s.Status = input.Status
+	s.Goals = input.Goals
 	s.Note = input.Note
 	endedAt := input.EndedAt
 	s.EndedAt = &endedAt

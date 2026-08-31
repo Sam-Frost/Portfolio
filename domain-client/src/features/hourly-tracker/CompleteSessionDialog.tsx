@@ -1,36 +1,48 @@
 import { useRef, useState, type KeyboardEvent } from "react";
 import { formatMinutes } from "./dateUtils";
-import type { WorkSession } from "./types";
+import { GoalChecklist } from "./GoalChecklist";
+import type { FinishPayload, Goal, WorkSession } from "./types";
 
 interface CompleteSessionDialogProps {
   session: WorkSession;
-  onSubmit: (note: string) => Promise<void>;
+  onSubmit: (payload: FinishPayload) => Promise<void>;
 }
 
 // Not dismissable — no backdrop click, Escape is swallowed — a completed
-// session's note is required (per spec), so this is the one dialog in the
-// app with no cancel path.
+// session must be logged with what came of it, so this is the one dialog in
+// the app with no cancel path. "Logged" means either ticking the goals set
+// at start or leaving a remark (matching the server's rule).
 export function CompleteSessionDialog({ session, onSubmit }: CompleteSessionDialogProps) {
+  const [goals, setGoals] = useState<Goal[]>(() =>
+    (session.goals ?? []).map((g) => ({ text: g.text, done: g.done })),
+  );
   const [note, setNote] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
+  const hasGoals = goals.length > 0;
+
   function handleKeyDown(e: KeyboardEvent<HTMLDivElement>) {
     if (e.key === "Escape") e.stopPropagation();
   }
 
+  function toggleGoal(index: number) {
+    setGoals((prev) => prev.map((g, i) => (i === index ? { ...g, done: !g.done } : g)));
+  }
+
   async function handleSubmit() {
     const trimmed = note.trim();
-    if (!trimmed) {
+    if (!hasGoals && !trimmed) {
       textareaRef.current?.focus();
+      setError("Tick a goal or add a remark to log this session.");
       return;
     }
 
     setSubmitting(true);
     setError(null);
     try {
-      await onSubmit(trimmed);
+      await onSubmit({ goals, note: trimmed });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Couldn't save the session.");
       setSubmitting(false);
@@ -52,17 +64,29 @@ export function CompleteSessionDialog({ session, onSubmit }: CompleteSessionDial
       >
         <h2 className="text-[length:var(--text-caption)] text-(--fg) mb-1.5">Time's up</h2>
         <p className="text-[length:var(--text-pill)] text-(--text-muted) mb-4">
-          Your {formatMinutes(session.plannedMinutes)} session just finished. What did you work on?
+          Your {formatMinutes(session.plannedMinutes)} session just finished. How did it go?
         </p>
 
+        {hasGoals && (
+          <>
+            <p className="text-[length:var(--text-pill)] text-(--text-muted) mb-1.5">Goals</p>
+            <div className="mb-4">
+              <GoalChecklist goals={goals} onToggle={toggleGoal} disabled={submitting} />
+            </div>
+          </>
+        )}
+
+        <p className="text-[length:var(--text-pill)] text-(--text-muted) mb-1.5">
+          Remarks{hasGoals ? " (optional)" : ""}
+        </p>
         <textarea
           ref={textareaRef}
-          autoFocus
+          autoFocus={!hasGoals}
           value={note}
           onChange={(e) => setNote(e.target.value)}
           rows={3}
           disabled={submitting}
-          placeholder="What did you get done?"
+          placeholder="What got done, what didn't, anything to carry over"
           className="w-full mb-3 resize-none rounded-lg bg-(--card-alt) border-(--line) border-[0.5px] border-solid px-2.5 py-1.5 text-[length:var(--text-caption)] text-(--fg) focus:outline-none"
         />
 
