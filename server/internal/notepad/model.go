@@ -11,6 +11,7 @@ type Note struct {
 	ContentHTML string    `json:"contentHtml"`
 	Pinned      bool      `json:"pinned"`
 	Archived    bool      `json:"archived"`
+	Locked      bool      `json:"locked"`
 	CreatedAt   time.Time `json:"createdAt"`
 	UpdatedAt   time.Time `json:"updatedAt"`
 
@@ -25,6 +26,7 @@ type NoteSummary struct {
 	Title     string    `json:"title"`
 	Pinned    bool      `json:"pinned"`
 	Archived  bool      `json:"archived"`
+	Locked    bool      `json:"locked"`
 	CreatedAt time.Time `json:"createdAt"`
 	UpdatedAt time.Time `json:"updatedAt"`
 }
@@ -52,6 +54,7 @@ type UpdateInput struct {
 	ContentHTML *string `json:"contentHtml"`
 	Pinned      *bool   `json:"pinned"`
 	Archived    *bool   `json:"archived"`
+	Locked      *bool   `json:"locked"`
 }
 
 func updatedAtNow() time.Time { return time.Now().UTC() }

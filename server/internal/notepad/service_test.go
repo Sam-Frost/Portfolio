@@ -206,6 +206,46 @@ func TestService_ScratchIsSingletonTitlelessAndUnlisted(t *testing.T) {
 	}
 }
 
+func TestService_LockedNoteRejectsContentEditsUntilUnlocked(t *testing.T) {
+	svc := NewService(NewMemoryRepository())
+
+	n, err := svc.Create(context.Background(), CreateInput{})
+	if err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+
+	locked := true
+	if _, err := svc.Update(context.Background(), n.ID, UpdateInput{Locked: &locked}); err != nil {
+		t.Fatalf("Update lock: %v", err)
+	}
+
+	body := "<p>edit</p>"
+	if _, err := svc.Update(context.Background(), n.ID, UpdateInput{ContentHTML: &body}); err == nil {
+		t.Errorf("editing a locked note = nil error, want invalid-input")
+	}
+
+	title := "renamed"
+	if _, err := svc.Update(context.Background(), n.ID, UpdateInput{Title: &title}); err == nil {
+		t.Errorf("retitling a locked note = nil error, want invalid-input")
+	}
+
+	// Pin still works on a locked note.
+	pinned := true
+	if _, err := svc.Update(context.Background(), n.ID, UpdateInput{Pinned: &pinned}); err != nil {
+		t.Errorf("pinning a locked note: %v", err)
+	}
+
+	// Unlocking and editing in the same request is allowed.
+	unlock := false
+	updated, err := svc.Update(context.Background(), n.ID, UpdateInput{Locked: &unlock, ContentHTML: &body})
+	if err != nil {
+		t.Fatalf("unlock + edit: %v", err)
+	}
+	if updated.Locked || !strings.Contains(updated.ContentHTML, "edit") {
+		t.Errorf("after unlock+edit: Locked=%v ContentHTML=%q", updated.Locked, updated.ContentHTML)
+	}
+}
+
 func TestService_ListSortsPinnedFirst(t *testing.T) {
 	svc := NewService(NewMemoryRepository())
 

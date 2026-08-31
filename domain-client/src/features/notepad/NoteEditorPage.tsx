@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { Archive, ArchiveRestore, ArrowLeft, Star } from "lucide-react";
+import { Archive, ArchiveRestore, ArrowLeft, Lock, LockOpen, Star } from "lucide-react";
 import { fetchNote, updateNote } from "./api";
 import { RichTextEditor } from "../../components/domain/RichTextEditor";
 import type { Note } from "./types";
@@ -57,8 +57,10 @@ export function NoteEditorPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
+  const locked = note?.locked ?? false;
+
   function scheduleSave(patch: { title?: string; contentHtml?: string }) {
-    if (!id) return;
+    if (!id || locked) return;
     pendingRef.current = { ...pendingRef.current, ...patch };
     setStatus("saving");
     if (timeoutRef.current) window.clearTimeout(timeoutRef.current);
@@ -87,6 +89,29 @@ export function NoteEditorPage() {
     updateNote(id, { pinned: nextPinned })
       .then((updated) => setNote(updated))
       .catch(() => setNote((prev) => (prev ? { ...prev, pinned: !nextPinned } : prev)));
+  }
+
+  function handleToggleLock() {
+    if (!id || !note) return;
+    const nextLocked = !note.locked;
+    // Locking freezes the note as-is: fold any still-pending edits into the
+    // same request, since the server rejects content writes once locked.
+    if (timeoutRef.current) window.clearTimeout(timeoutRef.current);
+    timeoutRef.current = null;
+    const patch = { ...pendingRef.current, locked: nextLocked };
+    pendingRef.current = {};
+    setNote({ ...note, locked: nextLocked });
+    setStatus("saving");
+    updateNote(id, patch)
+      .then((updated) => {
+        setNote(updated);
+        setTitle(updated.title);
+        setStatus("saved");
+      })
+      .catch(() => {
+        setNote((prev) => (prev ? { ...prev, locked: !nextLocked } : prev));
+        setStatus("error");
+      });
   }
 
   function handleToggleArchive() {
@@ -124,9 +149,29 @@ export function NoteEditorPage() {
 
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-1.5 text-[length:var(--text-pill)] text-(--text-faint)">
-            <span className={`size-2 rounded-full shrink-0 ${dotClass}`} />
-            {label}
+            {locked ? (
+              <>
+                <Lock size={12} className="shrink-0" />
+                View only
+              </>
+            ) : (
+              <>
+                <span className={`size-2 rounded-full shrink-0 ${dotClass}`} />
+                {label}
+              </>
+            )}
           </div>
+
+          <button
+            onClick={handleToggleLock}
+            aria-label={locked ? "Unlock note" : "Lock note"}
+            aria-pressed={locked}
+            className={`transition-colors cursor-pointer ${
+              locked ? "text-(--label-orange)" : "text-(--text-faint) hover:text-(--fg)"
+            }`}
+          >
+            {locked ? <Lock size={15} /> : <LockOpen size={15} />}
+          </button>
 
           <button
             onClick={handleTogglePin}
@@ -152,11 +197,17 @@ export function NoteEditorPage() {
       <input
         value={title}
         onChange={(e) => handleTitleChange(e.target.value)}
+        readOnly={locked}
         placeholder="Untitled"
-        className="shrink-0 mb-3 bg-transparent outline-none text-xl font-space font-semibold text-(--fg) placeholder:text-(--text-faint)"
+        className="shrink-0 mb-3 bg-transparent outline-none text-xl font-space font-semibold text-(--fg) placeholder:text-(--text-faint) read-only:cursor-default"
       />
 
-      <RichTextEditor key={note.id} initialContentHtml={note.contentHtml} onChange={handleContentChange} />
+      <RichTextEditor
+        key={note.id}
+        initialContentHtml={note.contentHtml}
+        onChange={handleContentChange}
+        readOnly={locked}
+      />
     </div>
   );
 }
