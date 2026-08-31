@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Archive, ArchiveRestore, Plus, Search, Star, Trash2 } from "lucide-react";
+import { Archive, ArchiveRestore, Lock, LockOpen, Plus, Search, Star, Trash2 } from "lucide-react";
 import { createNote, deleteNote, fetchNotes, updateNote } from "./api";
 import { DeleteNoteDialog } from "./DeleteNoteDialog";
 import type { NoteSummary } from "./types";
@@ -68,6 +68,15 @@ export function NotepadPage() {
     );
     updateNote(note.id, { pinned: nextPinned }).catch((err) => {
       setNotes((prev) => prev.map((n) => (n.id === note.id ? { ...n, pinned: note.pinned } : n)));
+      setError(err instanceof Error ? err.message : "Couldn't update note.");
+    });
+  }
+
+  function handleToggleLock(note: NoteSummary) {
+    const nextLocked = !note.locked;
+    setNotes((prev) => prev.map((n) => (n.id === note.id ? { ...n, locked: nextLocked } : n)));
+    updateNote(note.id, { locked: nextLocked }).catch((err) => {
+      setNotes((prev) => prev.map((n) => (n.id === note.id ? { ...n, locked: note.locked } : n)));
       setError(err instanceof Error ? err.message : "Couldn't update note.");
     });
   }
@@ -175,6 +184,7 @@ export function NotepadPage() {
                   {note.pinned && view === "active" && (
                     <Star size={12} className="shrink-0 fill-(--label-yellow) text-(--label-yellow)" />
                   )}
+                  {note.locked && <Lock size={12} className="shrink-0 text-(--label-orange)" />}
                   <span className="truncate">{note.title}</span>
                 </span>
                 <span className="text-[length:var(--text-pill)] text-(--text-faint)">{formatDate(note.createdAt)}</span>
@@ -196,6 +206,20 @@ export function NotepadPage() {
                       <Star size={13} className={note.pinned ? "fill-(--label-yellow)" : ""} />
                     </button>
                   )}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleToggleLock(note);
+                    }}
+                    aria-label={note.locked ? "Unlock note" : "Lock note"}
+                    className={`transition-colors cursor-pointer ${
+                      note.locked
+                        ? "text-(--label-orange)"
+                        : "text-(--text-faint) hover:text-(--fg)"
+                    }`}
+                  >
+                    {note.locked ? <Lock size={13} /> : <LockOpen size={13} />}
+                  </button>
                   <button
                     onClick={(e) => {
                       e.stopPropagation();

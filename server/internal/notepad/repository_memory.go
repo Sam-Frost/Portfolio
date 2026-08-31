@@ -38,7 +38,7 @@ func (r *MemoryRepository) List(_ context.Context, filter ListFilter) ([]NoteSum
 			continue
 		}
 		summaries = append(summaries, NoteSummary{
-			ID: n.ID, Title: n.Title, Pinned: n.Pinned, Archived: n.Archived,
+			ID: n.ID, Title: n.Title, Pinned: n.Pinned, Archived: n.Archived, Locked: n.Locked,
 			CreatedAt: n.CreatedAt, UpdatedAt: n.UpdatedAt,
 		})
 	}
@@ -82,6 +82,9 @@ func (r *MemoryRepository) Update(_ context.Context, noteID string, input Update
 	}
 	if input.Pinned != nil {
 		n.Pinned = *input.Pinned
+	}
+	if input.Locked != nil {
+		n.Locked = *input.Locked
 	}
 	if input.Archived != nil {
 		n.Archived = *input.Archived

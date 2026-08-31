@@ -4,6 +4,8 @@ import (
 	"context"
 	"strings"
 	"time"
+
+	"github.com/Sam-Frost/portfolio/internal/apperr"
 )
 
 type Service struct {
@@ -41,6 +43,22 @@ func (s *Service) Get(ctx context.Context, id string) (Note, error) {
 // selects-all-and-deletes the title field), the same rule Create applies —
 // a note is never left titleless.
 func (s *Service) Update(ctx context.Context, id string, input UpdateInput) (Note, error) {
+	// A locked note is view-only: its title and body can't be edited until
+	// it's unlocked. Unlocking in the same request is allowed (that's how
+	// the editor leaves view-only mode); pin/archive stay available since
+	// they're list bookkeeping, not content.
+	editsContent := input.Title != nil || input.ContentHTML != nil
+	unlocking := input.Locked != nil && !*input.Locked
+	if editsContent && !unlocking {
+		existing, err := s.repo.Get(ctx, id)
+		if err != nil {
+			return Note{}, err
+		}
+		if existing.Locked {
+			return Note{}, apperr.InvalidInput("note is locked")
+		}
+	}
+
 	if input.Title != nil {
 		trimmed := strings.TrimSpace(*input.Title)
 		if trimmed == "" {

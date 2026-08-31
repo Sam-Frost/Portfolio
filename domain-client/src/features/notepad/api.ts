@@ -21,7 +21,7 @@ export function createNote(title?: string): Promise<Note> {
 // title/contentHtml just changed.
 export function updateNote(
   id: string,
-  patch: { title?: string; contentHtml?: string; pinned?: boolean; archived?: boolean },
+  patch: { title?: string; contentHtml?: string; pinned?: boolean; archived?: boolean; locked?: boolean },
 ): Promise<Note> {
   return apiRequest<Note>(`/api/notes/${id}`, {
     method: "PATCH",

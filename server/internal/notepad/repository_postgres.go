@@ -22,8 +22,8 @@ func NewPostgresRepository(db *sql.DB) *PostgresRepository {
 func (r *PostgresRepository) Create(ctx context.Context, n Note) (Note, error) {
 	n.ID = id.New()
 
-	const q = `INSERT INTO notes (id, title, content_html, pinned, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6)`
-	if _, err := r.db.ExecContext(ctx, q, n.ID, n.Title, n.ContentHTML, n.Pinned, n.CreatedAt, n.UpdatedAt); err != nil {
+	const q = `INSERT INTO notes (id, title, content_html, pinned, locked, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6, $7)`
+	if _, err := r.db.ExecContext(ctx, q, n.ID, n.Title, n.ContentHTML, n.Pinned, n.Locked, n.CreatedAt, n.UpdatedAt); err != nil {
 		return Note{}, apperr.Internal("failed to create note")
 	}
 	return n, nil
@@ -33,7 +33,7 @@ func (r *PostgresRepository) List(ctx context.Context, filter ListFilter) ([]Not
 	// Pinned notes float to the top of the working set; within each group,
 	// newest first. Archived notes are never pinned (archiving clears the
 	// pin) so `pinned DESC` is a no-op for the archive view.
-	const q = `SELECT id, title, pinned, (archived_at IS NOT NULL) AS archived, created_at, updated_at
+	const q = `SELECT id, title, pinned, (archived_at IS NOT NULL) AS archived, locked, created_at, updated_at
 		FROM notes
 		WHERE deleted_at IS NULL AND (archived_at IS NOT NULL) = $1
 		ORDER BY pinned DESC, created_at DESC`
@@ -47,7 +47,7 @@ func (r *PostgresRepository) List(ctx context.Context, filter ListFilter) ([]Not
 	summaries := make([]NoteSummary, 0)
 	for rows.Next() {
 		var s NoteSummary
-		if err := rows.Scan(&s.ID, &s.Title, &s.Pinned, &s.Archived, &s.CreatedAt, &s.UpdatedAt); err != nil {
+		if err := rows.Scan(&s.ID, &s.Title, &s.Pinned, &s.Archived, &s.Locked, &s.CreatedAt, &s.UpdatedAt); err != nil {
 			return nil, apperr.Internal("failed to scan note")
 		}
 		summaries = append(summaries, s)
@@ -60,11 +60,11 @@ func (r *PostgresRepository) List(ctx context.Context, filter ListFilter) ([]Not
 }
 
 func (r *PostgresRepository) Get(ctx context.Context, noteID string) (Note, error) {
-	const q = `SELECT id, title, content_html, pinned, (archived_at IS NOT NULL) AS archived, created_at, updated_at
+	const q = `SELECT id, title, content_html, pinned, (archived_at IS NOT NULL) AS archived, locked, created_at, updated_at
 		FROM notes WHERE id = $1 AND deleted_at IS NULL`
 
 	var n Note
-	err := r.db.QueryRowContext(ctx, q, noteID).Scan(&n.ID, &n.Title, &n.ContentHTML, &n.Pinned, &n.Archived, &n.CreatedAt, &n.UpdatedAt)
+	err := r.db.QueryRowContext(ctx, q, noteID).Scan(&n.ID, &n.Title, &n.ContentHTML, &n.Pinned, &n.Archived, &n.Locked, &n.CreatedAt, &n.UpdatedAt)
 	if errors.Is(err, sql.ErrNoRows) {
 		return Note{}, apperr.NotFound("note not found")
 	}
@@ -94,6 +94,11 @@ func (r *PostgresRepository) Update(ctx context.Context, noteID string, input Up
 		args = append(args, *input.Pinned)
 		argN++
 	}
+	if input.Locked != nil {
+		sets = append(sets, fmt.Sprintf("locked = $%d", argN))
+		args = append(args, *input.Locked)
+		argN++
+	}
 	if input.Archived != nil {
 		if *input.Archived {
 			// Archiving stamps archived_at and drops the pin — an archived
@@ -117,12 +122,12 @@ func (r *PostgresRepository) Update(ctx context.Context, noteID string, input Up
 	args = append(args, noteID)
 	q := fmt.Sprintf(
 		"UPDATE notes SET %s WHERE id = $%d AND deleted_at IS NULL "+
-			"RETURNING id, title, content_html, pinned, (archived_at IS NOT NULL) AS archived, created_at, updated_at",
+			"RETURNING id, title, content_html, pinned, (archived_at IS NOT NULL) AS archived, locked, created_at, updated_at",
 		strings.Join(sets, ", "), argN,
 	)
 
 	var n Note
-	err := r.db.QueryRowContext(ctx, q, args...).Scan(&n.ID, &n.Title, &n.ContentHTML, &n.Pinned, &n.Archived, &n.CreatedAt, &n.UpdatedAt)
+	err := r.db.QueryRowContext(ctx, q, args...).Scan(&n.ID, &n.Title, &n.ContentHTML, &n.Pinned, &n.Archived, &n.Locked, &n.CreatedAt, &n.UpdatedAt)
 	if errors.Is(err, sql.ErrNoRows) {
 		return Note{}, apperr.NotFound("note not found")
 	}
