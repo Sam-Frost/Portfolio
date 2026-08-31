@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Archive, ArchiveRestore, Plus, Search, Star, Trash2 } from "lucide-react";
+import { Archive, ArchiveRestore, NotebookPen, Plus, Search, Star, Trash2 } from "lucide-react";
 import { createNote, deleteNote, fetchNotes, updateNote } from "./api";
 import { DeleteNoteDialog } from "./DeleteNoteDialog";
 import type { NoteSummary } from "./types";
@@ -98,16 +98,26 @@ export function NotepadPage() {
             Archive
           </button>
         </div>
-        <button
-          onClick={handleCreate}
-          disabled={creating}
-          className={`flex items-center gap-1.5 rounded-lg bg-(--fg) text-(--bg) px-3 py-1.5 text-[length:var(--text-caption)] transition-opacity ${
-            creating ? "opacity-60 cursor-not-allowed" : "cursor-pointer"
-          }`}
-        >
-          <Plus size={14} />
-          New note
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => navigate("/notepad/scratch")}
+            title="One always-there scratch pad, separate from your notes"
+            className="flex items-center gap-1.5 rounded-lg border-(--line) border-[0.5px] border-solid px-3 py-1.5 text-[length:var(--text-caption)] text-(--text-muted) hover:text-(--fg) transition-colors cursor-pointer"
+          >
+            <NotebookPen size={14} />
+            Random Notepad
+          </button>
+          <button
+            onClick={handleCreate}
+            disabled={creating}
+            className={`flex items-center gap-1.5 rounded-lg bg-(--fg) text-(--bg) px-3 py-1.5 text-[length:var(--text-caption)] transition-opacity ${
+              creating ? "opacity-60 cursor-not-allowed" : "cursor-pointer"
+            }`}
+          >
+            <Plus size={14} />
+            New note
+          </button>
+        </div>
       </div>
 
       <div className="shrink-0 flex flex-wrap items-center gap-2 mb-3">

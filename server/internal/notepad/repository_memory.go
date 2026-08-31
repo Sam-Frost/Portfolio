@@ -10,9 +10,10 @@ import (
 )
 
 type MemoryRepository struct {
-	mu      sync.Mutex
-	notes   map[string]Note
-	deleted map[string]bool
+	mu        sync.Mutex
+	notes     map[string]Note
+	deleted   map[string]bool
+	scratchID string
 }
 
 func NewMemoryRepository() *MemoryRepository {
@@ -34,7 +35,7 @@ func (r *MemoryRepository) List(_ context.Context, filter ListFilter) ([]NoteSum
 
 	summaries := make([]NoteSummary, 0, len(r.notes))
 	for _, n := range r.notes {
-		if r.deleted[n.ID] || n.Archived != filter.Archived {
+		if r.deleted[n.ID] || n.Scratch || n.Archived != filter.Archived {
 			continue
 		}
 		summaries = append(summaries, NoteSummary{
@@ -52,6 +53,21 @@ func (r *MemoryRepository) List(_ context.Context, filter ListFilter) ([]NoteSum
 		return summaries[i].CreatedAt.After(summaries[j].CreatedAt)
 	})
 	return summaries, nil
+}
+
+func (r *MemoryRepository) Scratch(_ context.Context) (Note, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	if n, ok := r.notes[r.scratchID]; ok && !r.deleted[n.ID] {
+		return n, nil
+	}
+
+	now := updatedAtNow()
+	n := Note{ID: id.New(), Scratch: true, CreatedAt: now, UpdatedAt: now}
+	r.notes[n.ID] = n
+	r.scratchID = n.ID
+	return n, nil
 }
 
 func (r *MemoryRepository) Get(_ context.Context, noteID string) (Note, error) {

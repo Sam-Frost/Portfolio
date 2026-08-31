@@ -9,6 +9,13 @@ export function fetchNote(id: string): Promise<Note> {
   return apiRequest<Note>(`/api/notes/${id}`);
 }
 
+// The singleton "Random Notepad" scratch buffer — one always-there,
+// title-less note the server get-or-creates on first open. It never shows up
+// in fetchNotes(); once you have it, edit it with updateNote() like any note.
+export function fetchScratchNote(): Promise<Note> {
+  return apiRequest<Note>("/api/notes/scratch");
+}
+
 export function createNote(title?: string): Promise<Note> {
   return apiRequest<Note>("/api/notes", {
     method: "POST",

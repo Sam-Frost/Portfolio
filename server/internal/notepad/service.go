@@ -36,6 +36,13 @@ func (s *Service) Get(ctx context.Context, id string) (Note, error) {
 	return s.repo.Get(ctx, id)
 }
 
+// Scratch returns the singleton "Random Notepad" scratch note, created on
+// first access. It has no title and never appears in List; the frontend
+// edits it through the ordinary Update path once it has the returned ID.
+func (s *Service) Scratch(ctx context.Context) (Note, error) {
+	return s.repo.Scratch(ctx)
+}
+
 // Update re-defaults the title to the note's original creation timestamp if
 // the caller clears it to blank (e.g. autosave firing right after the user
 // selects-all-and-deletes the title field), the same rule Create applies —

@@ -161,6 +161,51 @@ func TestService_ArchiveMovesNoteBetweenListsAndClearsPin(t *testing.T) {
 	}
 }
 
+func TestService_ScratchIsSingletonTitlelessAndUnlisted(t *testing.T) {
+	svc := NewService(NewMemoryRepository())
+
+	a, err := svc.Scratch(context.Background())
+	if err != nil {
+		t.Fatalf("Scratch: %v", err)
+	}
+	if a.Title != "" {
+		t.Errorf("scratch Title = %q, want empty", a.Title)
+	}
+
+	b, err := svc.Scratch(context.Background())
+	if err != nil {
+		t.Fatalf("Scratch (2nd call): %v", err)
+	}
+	if a.ID != b.ID {
+		t.Errorf("Scratch returned two different notes: %s vs %s", a.ID, b.ID)
+	}
+
+	content := "<p>quick jot</p>"
+	if _, err := svc.Update(context.Background(), a.ID, UpdateInput{ContentHTML: &content}); err != nil {
+		t.Fatalf("Update scratch: %v", err)
+	}
+	got, err := svc.Scratch(context.Background())
+	if err != nil {
+		t.Fatalf("Scratch (after update): %v", err)
+	}
+	if !strings.Contains(got.ContentHTML, "quick jot") {
+		t.Errorf("scratch ContentHTML = %q, want to contain the jot", got.ContentHTML)
+	}
+	if got.Title != "" {
+		t.Errorf("scratch Title = %q after content update, want still empty", got.Title)
+	}
+
+	for _, archived := range []bool{false, true} {
+		list, err := svc.List(context.Background(), ListFilter{Archived: archived})
+		if err != nil {
+			t.Fatalf("List(archived=%v): %v", archived, err)
+		}
+		if len(list) != 0 {
+			t.Errorf("List(archived=%v) = %+v, want the scratch note excluded", archived, list)
+		}
+	}
+}
+
 func TestService_ListSortsPinnedFirst(t *testing.T) {
 	svc := NewService(NewMemoryRepository())
 

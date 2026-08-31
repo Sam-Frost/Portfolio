@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/Sam-Frost/portfolio/internal/apperr"
 	"github.com/Sam-Frost/portfolio/internal/id"
@@ -35,7 +36,7 @@ func (r *PostgresRepository) List(ctx context.Context, filter ListFilter) ([]Not
 	// pin) so `pinned DESC` is a no-op for the archive view.
 	const q = `SELECT id, title, pinned, (archived_at IS NOT NULL) AS archived, created_at, updated_at
 		FROM notes
-		WHERE deleted_at IS NULL AND (archived_at IS NOT NULL) = $1
+		WHERE deleted_at IS NULL AND NOT scratch AND (archived_at IS NOT NULL) = $1
 		ORDER BY pinned DESC, created_at DESC`
 
 	rows, err := r.db.QueryContext(ctx, q, filter.Archived)
@@ -57,6 +58,47 @@ func (r *PostgresRepository) List(ctx context.Context, filter ListFilter) ([]Not
 	}
 
 	return summaries, nil
+}
+
+// Scratch get-or-creates the singleton scratch note. The partial unique
+// index idx_notes_single_scratch guarantees there's only ever one live
+// scratch row; ON CONFLICT DO NOTHING + a re-select makes a concurrent
+// first-open race resolve to that same row rather than erroring.
+func (r *PostgresRepository) Scratch(ctx context.Context) (Note, error) {
+	n, err := r.selectScratch(ctx)
+	if err == nil {
+		return n, nil
+	}
+	if !errors.Is(err, sql.ErrNoRows) {
+		return Note{}, apperr.Internal("failed to get scratch note")
+	}
+
+	now := time.Now().UTC()
+	const ins = `INSERT INTO notes (id, title, content_html, pinned, scratch, created_at, updated_at)
+		VALUES ($1, '', '', FALSE, TRUE, $2, $2)
+		ON CONFLICT DO NOTHING`
+	if _, err := r.db.ExecContext(ctx, ins, id.New(), now); err != nil {
+		return Note{}, apperr.Internal("failed to create scratch note")
+	}
+
+	n, err = r.selectScratch(ctx)
+	if err != nil {
+		return Note{}, apperr.Internal("failed to load scratch note")
+	}
+	return n, nil
+}
+
+func (r *PostgresRepository) selectScratch(ctx context.Context) (Note, error) {
+	const q = `SELECT id, title, content_html, pinned, (archived_at IS NOT NULL) AS archived, created_at, updated_at
+		FROM notes WHERE scratch AND deleted_at IS NULL`
+
+	var n Note
+	err := r.db.QueryRowContext(ctx, q).Scan(&n.ID, &n.Title, &n.ContentHTML, &n.Pinned, &n.Archived, &n.CreatedAt, &n.UpdatedAt)
+	if err != nil {
+		return Note{}, err
+	}
+	n.Scratch = true
+	return n, nil
 }
 
 func (r *PostgresRepository) Get(ctx context.Context, noteID string) (Note, error) {
