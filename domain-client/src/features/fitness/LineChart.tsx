@@ -125,10 +125,10 @@ export function LineChart({ title, points, unit, target, emptyLabel }: LineChart
             </div>
 
             <div className="relative h-3 mt-1 text-[9px] leading-none text-(--text-faint)">
-              {ticks.map((i) => (
+              {ticks.map((i, ti) => (
                 <span
                   key={i}
-                  className="absolute -translate-x-1/2 whitespace-nowrap"
+                  className={`absolute whitespace-nowrap ${edgeAnchor(ti, ticks.length)}`}
                   style={{ left: `${points.length <= 1 ? 50 : (i / (points.length - 1)) * 100}%` }}
                 >
                   {formatAxisDate(points[i].date)}
@@ -140,6 +140,17 @@ export function LineChart({ title, points, unit, target, emptyLabel }: LineChart
       )}
     </div>
   );
+}
+
+// Keep the first/last axis labels inside the plot's own width (they sit at
+// left:0%/100%): left-align the first, right-align the last, center the rest.
+// Without this they poke a few px past the card edge and produce a stray
+// horizontal scrollbar in the tab's overflow-y container.
+function edgeAnchor(index: number, count: number): string {
+  if (count <= 1) return "-translate-x-1/2";
+  if (index === 0) return "translate-x-0";
+  if (index === count - 1) return "-translate-x-full";
+  return "-translate-x-1/2";
 }
 
 function axisTickIndexes(n: number): number[] {

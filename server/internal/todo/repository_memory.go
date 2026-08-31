@@ -27,6 +27,7 @@ func (r *MemoryRepository) Create(_ context.Context, todo Todo) (Todo, error) {
 	todo.ID = id.New()
 	todo.DateAdded = time.Now().UTC()
 	todo.Done = false
+	todo.CompletedAt = nil
 	r.todos[todo.ID] = todo
 	return todo, nil
 }
@@ -51,9 +52,26 @@ func (r *MemoryRepository) List(_ context.Context, sortField SortField, order So
 }
 
 // less mirrors the frontend's compareTodos for the fields the server now
-// sorts: null target dates always sort to the end, regardless of order.
+// sorts: null target dates (and null completion timestamps) always sort to
+// the end, regardless of order.
 func less(a, b Todo, field SortField, order SortOrder) bool {
 	ascending := order != SortDesc
+
+	if field == SortByCompletedAt {
+		if a.CompletedAt == nil && b.CompletedAt == nil {
+			return false
+		}
+		if a.CompletedAt == nil {
+			return false
+		}
+		if b.CompletedAt == nil {
+			return true
+		}
+		if ascending {
+			return a.CompletedAt.Before(*b.CompletedAt)
+		}
+		return a.CompletedAt.After(*b.CompletedAt)
+	}
 
 	if field == SortByTargetDate {
 		if a.TargetDate == nil && b.TargetDate == nil {
@@ -101,6 +119,14 @@ func (r *MemoryRepository) Update(_ context.Context, todoID string, input Update
 	}
 	if input.Done != nil {
 		t.Done = *input.Done
+		// completed_at tracks done: stamped on completion, cleared on undo
+		// so a later redo records a fresh timestamp.
+		if t.Done {
+			now := time.Now().UTC()
+			t.CompletedAt = &now
+		} else {
+			t.CompletedAt = nil
+		}
 	}
 	if input.LabelID != nil {
 		if *input.LabelID == "" {

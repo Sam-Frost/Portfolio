@@ -163,7 +163,7 @@ export function FitnessCyclePage() {
         )}
       </div>
 
-      <div className="flex-1 min-h-0 overflow-y-auto themed-scrollbar pb-2">
+      <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden themed-scrollbar pb-2">
         {tab === "exercise" && <ExerciseTab cycleId={cycle.id} onError={setError} />}
         {tab === "weight" && <WeightTab cycle={cycle} onError={setError} />}
         {tab === "protein" && <ProteinTab cycle={cycle} onError={setError} />}

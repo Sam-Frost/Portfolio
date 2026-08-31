@@ -26,9 +26,10 @@ func (r *PostgresRepository) Create(ctx context.Context, t Todo) (Todo, error) {
 	t.ID = id.New()
 	t.DateAdded = time.Now().UTC()
 	t.Done = false
+	t.CompletedAt = nil
 
-	const q = `INSERT INTO todos (id, name, description, date_added, target_date, done, label_id) VALUES ($1, $2, $3, $4, $5, $6, $7)`
-	if _, err := r.db.ExecContext(ctx, q, t.ID, t.Name, t.Description, t.DateAdded, t.TargetDate, t.Done, t.LabelID); err != nil {
+	const q = `INSERT INTO todos (id, name, description, date_added, target_date, done, completed_at, label_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`
+	if _, err := r.db.ExecContext(ctx, q, t.ID, t.Name, t.Description, t.DateAdded, t.TargetDate, t.Done, t.CompletedAt, t.LabelID); err != nil {
 		if isForeignKeyViolation(err) {
 			return Todo{}, apperr.InvalidInput("label not found")
 		}
@@ -43,14 +44,17 @@ func (r *PostgresRepository) List(ctx context.Context, sortField SortField, orde
 		orderSQL = "ASC"
 	}
 
-	// NULL target dates always sort last, regardless of direction, mirroring
-	// the in-memory repository's `less`.
+	// NULL target dates / completion timestamps always sort last, regardless
+	// of direction, mirroring the in-memory repository's `less`.
 	orderClause := " ORDER BY date_added " + orderSQL
-	if sortField == SortByTargetDate {
+	switch sortField {
+	case SortByTargetDate:
 		orderClause = " ORDER BY target_date IS NULL, target_date " + orderSQL
+	case SortByCompletedAt:
+		orderClause = " ORDER BY completed_at IS NULL, completed_at " + orderSQL
 	}
 
-	q := "SELECT id, name, description, date_added, target_date, done, label_id FROM todos"
+	q := "SELECT id, name, description, date_added, target_date, done, completed_at, label_id FROM todos"
 	args := make([]any, 0, 1)
 	if labelID != nil {
 		q += " WHERE label_id = $1"
@@ -67,7 +71,7 @@ func (r *PostgresRepository) List(ctx context.Context, sortField SortField, orde
 	todos := make([]Todo, 0)
 	for rows.Next() {
 		var t Todo
-		if err := rows.Scan(&t.ID, &t.Name, &t.Description, &t.DateAdded, &t.TargetDate, &t.Done, &t.LabelID); err != nil {
+		if err := rows.Scan(&t.ID, &t.Name, &t.Description, &t.DateAdded, &t.TargetDate, &t.Done, &t.CompletedAt, &t.LabelID); err != nil {
 			return nil, apperr.Internal("failed to scan todo")
 		}
 		todos = append(todos, t)
@@ -107,6 +111,17 @@ func (r *PostgresRepository) Update(ctx context.Context, todoID string, input Up
 		sets = append(sets, fmt.Sprintf("done = $%d", argN))
 		args = append(args, *input.Done)
 		argN++
+
+		// Keep completed_at in lockstep with done (the DB enforces this too,
+		// via todos_done_completed_at_consistent): set it on completion,
+		// clear it on undo so a later redo records a fresh timestamp.
+		if *input.Done {
+			sets = append(sets, fmt.Sprintf("completed_at = $%d", argN))
+			args = append(args, time.Now().UTC())
+			argN++
+		} else {
+			sets = append(sets, "completed_at = NULL")
+		}
 	}
 	if input.LabelID != nil {
 		sets = append(sets, fmt.Sprintf("label_id = $%d", argN))
@@ -124,12 +139,12 @@ func (r *PostgresRepository) Update(ctx context.Context, todoID string, input Up
 
 	args = append(args, todoID)
 	q := fmt.Sprintf(
-		"UPDATE todos SET %s WHERE id = $%d RETURNING id, name, description, date_added, target_date, done, label_id",
+		"UPDATE todos SET %s WHERE id = $%d RETURNING id, name, description, date_added, target_date, done, completed_at, label_id",
 		strings.Join(sets, ", "), argN,
 	)
 
 	var t Todo
-	err := r.db.QueryRowContext(ctx, q, args...).Scan(&t.ID, &t.Name, &t.Description, &t.DateAdded, &t.TargetDate, &t.Done, &t.LabelID)
+	err := r.db.QueryRowContext(ctx, q, args...).Scan(&t.ID, &t.Name, &t.Description, &t.DateAdded, &t.TargetDate, &t.Done, &t.CompletedAt, &t.LabelID)
 	if errors.Is(err, sql.ErrNoRows) {
 		return Todo{}, apperr.NotFound("todo not found")
 	}
@@ -143,10 +158,10 @@ func (r *PostgresRepository) Update(ctx context.Context, todoID string, input Up
 }
 
 func (r *PostgresRepository) get(ctx context.Context, todoID string) (Todo, error) {
-	const q = `SELECT id, name, description, date_added, target_date, done, label_id FROM todos WHERE id = $1`
+	const q = `SELECT id, name, description, date_added, target_date, done, completed_at, label_id FROM todos WHERE id = $1`
 
 	var t Todo
-	err := r.db.QueryRowContext(ctx, q, todoID).Scan(&t.ID, &t.Name, &t.Description, &t.DateAdded, &t.TargetDate, &t.Done, &t.LabelID)
+	err := r.db.QueryRowContext(ctx, q, todoID).Scan(&t.ID, &t.Name, &t.Description, &t.DateAdded, &t.TargetDate, &t.Done, &t.CompletedAt, &t.LabelID)
 	if errors.Is(err, sql.ErrNoRows) {
 		return Todo{}, apperr.NotFound("todo not found")
 	}

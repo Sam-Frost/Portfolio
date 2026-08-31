@@ -179,7 +179,7 @@ export function FitnessCyclesPage() {
         )}
       </div>
 
-      <div className="flex-1 min-h-0 overflow-y-auto themed-scrollbar">
+      <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden themed-scrollbar">
         {loading && (
           <div className="bg-(--card) border-(--line) border-[0.5px] border-solid rounded-xl p-8 text-center text-(--text-faint) text-[length:var(--text-caption)]">
             Loading cycles...

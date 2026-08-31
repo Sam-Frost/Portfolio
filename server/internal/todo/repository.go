@@ -5,8 +5,9 @@ import "context"
 type SortField string
 
 const (
-	SortByDateAdded  SortField = "dateAdded"
-	SortByTargetDate SortField = "targetDate"
+	SortByDateAdded   SortField = "dateAdded"
+	SortByTargetDate  SortField = "targetDate"
+	SortByCompletedAt SortField = "completedAt"
 )
 
 type SortOrder string

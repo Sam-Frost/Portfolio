@@ -24,7 +24,7 @@ func (h *Handler) Register(mux *http.ServeMux) {
 
 func (h *Handler) list(w http.ResponseWriter, r *http.Request) {
 	sortField := SortField(r.URL.Query().Get("sortBy"))
-	if sortField != SortByTargetDate {
+	if sortField != SortByTargetDate && sortField != SortByCompletedAt {
 		sortField = SortByDateAdded
 	}
 

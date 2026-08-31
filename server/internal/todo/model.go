@@ -9,7 +9,11 @@ type Todo struct {
 	DateAdded   time.Time `json:"dateAdded"`
 	TargetDate  *string   `json:"targetDate"`
 	Done        bool      `json:"done"`
-	LabelID     *string   `json:"labelId"`
+	// CompletedAt is set whenever Done flips to true and cleared whenever it
+	// flips back to false — so an undo/redo replaces the timestamp rather
+	// than keeping a stale one. Always non-nil exactly when Done is true.
+	CompletedAt *time.Time `json:"completedAt"`
+	LabelID     *string    `json:"labelId"`
 }
 
 // TargetDateLayout is the wire format for Todo.TargetDate ("YYYY-MM-DD").

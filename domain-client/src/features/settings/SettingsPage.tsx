@@ -1,16 +1,13 @@
 import { useEffect, useState } from "react";
-import { sections } from "../../data/domainSections";
 import { fetchSettings, updateSettings } from "./api";
 import { LabelsSection } from "./LabelsSection";
 import { DocumentLabelsSection } from "./DocumentLabelsSection";
 import { FoodLibrarySection } from "./FoodLibrarySection";
 import type { Settings, TimeLeftFormat } from "./types";
 
-// "Fitness" renders its own dedicated section (the shared food library)
-// below, so it's excluded from the generic "No settings yet" loop.
-const settingsSections = sections.filter(
-  (section) => section.label !== "Settings" && section.label !== "Fitness",
-);
+// Only sections that actually have a setting are rendered. As new
+// per-section settings are added, give them their own <section> block below
+// rather than a generic "coming soon" placeholder.
 
 // datetime-local inputs work in "local wall clock" strings with no timezone;
 // these convert to/from the RFC3339 UTC strings the backend stores.
@@ -29,7 +26,6 @@ export function SettingsPage() {
   const [settings, setSettings] = useState<Settings | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [savingHours, setSavingHours] = useState(false);
   const [savingClock, setSavingClock] = useState(false);
 
   useEffect(() => {
@@ -38,17 +34,6 @@ export function SettingsPage() {
       .catch((err) => setError(err instanceof Error ? err.message : "Couldn't load settings."))
       .finally(() => setLoading(false));
   }, []);
-
-  function handleTotalHoursChange(value: string) {
-    const totalWorkHoursRequired = value === "" ? null : Number(value);
-    setSettings((prev) =>
-      prev ? { ...prev, dailyWorkTracker: { ...prev.dailyWorkTracker, totalWorkHoursRequired } } : prev
-    );
-    setSavingHours(true);
-    updateSettings({ dailyWorkTracker: { totalWorkHoursRequired } })
-      .catch((err) => setError(err instanceof Error ? err.message : "Couldn't save settings."))
-      .finally(() => setSavingHours(false));
-  }
 
   function handleTimeLeftClockChange(patch: Partial<Settings["timeLeftClock"]>) {
     setSettings((prev) => {
@@ -63,7 +48,7 @@ export function SettingsPage() {
   }
 
   return (
-    <div className="h-full overflow-y-auto themed-scrollbar">
+    <div className="h-full overflow-y-auto themed-scrollbar pr-2">
       <h1 className="text-xl font-space font-semibold text-(--fg) mb-1.5">Settings</h1>
       <p className="text-[length:var(--text-caption)] text-(--text-muted) mb-6">
         Configuration for each domain section.
@@ -149,37 +134,6 @@ export function SettingsPage() {
               </div>
             </section>
           )}
-
-          {settings &&
-            settingsSections.map((section) => (
-            <section
-              key={section.label}
-              className="bg-(--card) border-(--line) border-[0.5px] border-solid rounded-xl p-5"
-            >
-              <h2 className="text-sm font-space font-medium text-(--fg) mb-3">{section.label}</h2>
-
-              {section.label === "Daily Work Tracker" ? (
-                <label className="flex flex-col gap-1.5 max-w-xs">
-                  <span className="text-[length:var(--text-caption)] text-(--text-muted)">
-                    Total work hours required (per day)
-                  </span>
-                  <input
-                    type="number"
-                    min={0}
-                    step={0.5}
-                    value={settings?.dailyWorkTracker.totalWorkHoursRequired ?? ""}
-                    onChange={(e) => handleTotalHoursChange(e.target.value)}
-                    className="rounded-lg border-(--line) border-[0.5px] border-solid bg-(--bg) px-3 py-2 text-[length:var(--text-caption)] text-(--fg) outline-none focus:border-(--line-strong)"
-                  />
-                  {savingHours && (
-                    <span className="text-[length:var(--text-pill)] text-(--text-faint)">Saving...</span>
-                  )}
-                </label>
-              ) : (
-                <p className="text-[length:var(--text-caption)] text-(--text-faint)">No settings yet.</p>
-              )}
-            </section>
-          ))}
         </div>
       )}
     </div>

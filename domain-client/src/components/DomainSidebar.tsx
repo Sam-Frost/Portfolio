@@ -11,7 +11,7 @@ export function DomainSidebar() {
 
   return (
     <aside className="w-56 shrink-0 border-r-[0.5px] border-(--line) bg-(--card) px-3 py-6 flex flex-col gap-5">
-      <div className="flex-1 min-h-0 overflow-y-auto themed-scrollbar flex flex-col gap-5">
+      <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden themed-scrollbar flex flex-col gap-5">
         {SECTION_GROUPS.map((group) => {
           const collapsible = COLLAPSIBLE_GROUPS.includes(group);
           const isCollapsed = collapsible && collapsed[group];
@@ -59,7 +59,7 @@ export function DomainSidebar() {
                           <section.icon size={16} />
                           {section.label}
                         </div>
-                        <span className="pointer-events-none absolute left-full top-1/2 ml-2 -translate-y-1/2 z-10 whitespace-nowrap rounded-md border-(--line) border-[0.5px] border-solid bg-(--card-alt) px-2.5 py-1 text-[length:var(--text-pill)] text-(--text-muted) opacity-0 shadow-lg transition-opacity duration-150 group-hover:opacity-100">
+                        <span className="pointer-events-none absolute left-3 top-full mt-1 z-10 whitespace-nowrap rounded-md border-(--line) border-[0.5px] border-solid bg-(--card-alt) px-2.5 py-1 text-[length:var(--text-pill)] text-(--text-muted) opacity-0 shadow-lg transition-opacity duration-150 group-hover:opacity-100">
                           Coming soon
                         </span>
                       </div>

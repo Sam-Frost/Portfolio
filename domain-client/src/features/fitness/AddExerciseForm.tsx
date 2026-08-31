@@ -32,7 +32,7 @@ export function AddExerciseForm({ onAdd }: AddExerciseFormProps) {
     "rounded-lg bg-(--card-alt) border-(--line) border-[0.5px] border-solid px-2.5 py-1.5 text-[length:var(--text-pill)] text-(--fg) placeholder:text-(--text-faint) focus:outline-none";
 
   return (
-    <form onSubmit={submit} className="bg-(--card) border-(--line) border-[0.5px] border-solid rounded-xl p-4 mb-4 flex flex-wrap items-end gap-3">
+    <form onSubmit={submit} className="bg-(--card) border-(--line) border-[0.5px] border-solid rounded-xl p-4 flex flex-wrap items-end gap-3">
       <label className="flex flex-col gap-1 flex-1 min-w-40">
         <span className="text-[length:var(--text-pill)] text-(--text-muted)">Exercise</span>
         <input autoFocus value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Pull-ups" className={`${field} text-[length:var(--text-caption)]`} />

@@ -5,17 +5,19 @@ import type { Label } from "../labels/types";
 
 interface AddTodoFormProps {
   labels: Label[];
+  // Controlled by TodosPage so it can track the active label filter — picking
+  // a label to view todos by also preselects it here. Deliberately not reset
+  // after submit, so adding several todos with the same label in a row doesn't
+  // require reselecting it each time.
+  labelId: string | null;
+  onLabelChange: (id: string | null) => void;
   onAdd: (input: { name: string; description: string | null; targetDate: string | null; labelId: string | null }) => void;
 }
 
-export function AddTodoForm({ labels, onAdd }: AddTodoFormProps) {
+export function AddTodoForm({ labels, labelId, onLabelChange, onAdd }: AddTodoFormProps) {
   const [text, setText] = useState("");
   const [targetDate, setTargetDate] = useState("");
   const [showDate, setShowDate] = useState(false);
-  // Deliberately not reset in submit(), unlike text/targetDate — adding
-  // several todos with the same label in a row shouldn't require reselecting
-  // it each time.
-  const [labelId, setLabelId] = useState<string | null>(null);
   const [confirming, setConfirming] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const yesButtonRef = useRef<HTMLButtonElement>(null);
@@ -112,7 +114,7 @@ export function AddTodoForm({ labels, onAdd }: AddTodoFormProps) {
       )}
 
       <div className="flex items-center gap-1 mt-1">
-        <LabelPicker labels={labels} selectedId={labelId} onChange={setLabelId} />
+        <LabelPicker labels={labels} selectedId={labelId} onChange={onLabelChange} />
 
         <button
           type="button"

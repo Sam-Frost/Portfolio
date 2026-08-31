@@ -5,7 +5,8 @@ export interface Todo {
   dateAdded: string;
   targetDate: string | null;
   done: boolean;
+  completedAt: string | null;
   labelId: string | null;
 }
 
-export type SortField = "dateAdded" | "targetDate";
+export type SortField = "dateAdded" | "targetDate" | "completedAt";

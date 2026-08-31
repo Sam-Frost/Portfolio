@@ -12,12 +12,15 @@ import { LabelDistributionPie } from "./LabelDistributionPie";
 import { TodoItem } from "./TodoItem";
 import type { SortField, Todo } from "./types";
 
-const SORT_OPTIONS: { field: SortField; label: string }[] = [
+type Tab = "active" | "completed";
+
+// `tab` restricts an option to one list — "Done date" only makes sense for
+// completed todos (active ones have no completedAt).
+const SORT_OPTIONS: { field: SortField; label: string; tab?: Tab }[] = [
   { field: "dateAdded", label: "Date added" },
   { field: "targetDate", label: "Target date" },
+  { field: "completedAt", label: "Done date", tab: "completed" },
 ];
-
-type Tab = "active" | "completed";
 
 // Sentinel labelFilter value for "todos with no label assigned", distinct
 // from null (no filter, i.e. "All labels"). Real label ids are 32-char hex
@@ -38,6 +41,10 @@ export function TodosPage() {
   const [ascending, setAscending] = useState(false);
   const [showSortMenu, setShowSortMenu] = useState(false);
   const [labelFilter, setLabelFilter] = useState<string | null>(null);
+  // Label preselected in the add-todo bar. Kept in sync with labelFilter:
+  // choosing a label to view by also preselects it for new todos. "All
+  // labels" (null) and "No label" both mean "no specific label" here.
+  const [addLabelId, setAddLabelId] = useState<string | null>(null);
   const [showLabelMenu, setShowLabelMenu] = useState(false);
   const [tab, setTab] = useState<Tab>("active");
   const [toast, setToast] = useState<{ key: number; message: string } | null>(null);
@@ -86,6 +93,20 @@ export function TodosPage() {
       .finally(() => setLoading(false));
   }, [sortField, ascending]);
 
+  function selectTab(next: Tab) {
+    setTab(next);
+    // "Done date" is a completed-only sort; fall back when leaving that tab.
+    if (next !== "completed" && sortField === "completedAt") {
+      setSortField("dateAdded");
+    }
+  }
+
+  function selectLabelFilter(next: string | null) {
+    setLabelFilter(next);
+    setAddLabelId(next === null || next === NO_LABEL_FILTER ? null : next);
+    setShowLabelMenu(false);
+  }
+
   function handleCreate(input: {
     name: string;
     description: string | null;
@@ -100,20 +121,27 @@ export function TodosPage() {
       .catch((err) => setError(err instanceof Error ? err.message : "Couldn't add todo."));
   }
 
+  function setDone(id: string, done: boolean) {
+    const original = todos.find((t) => t.id === id);
+    // Optimistically flip; the server owns completedAt (stamped on completion,
+    // cleared on undo), so reconcile with its response once it lands.
+    setTodos((prev) =>
+      prev.map((t) => (t.id === id ? { ...t, done, completedAt: done ? t.completedAt : null } : t)),
+    );
+    setTodoDone(id, done)
+      .then((updated) => setTodos((prev) => prev.map((t) => (t.id === id ? updated : t))))
+      .catch((err) => {
+        if (original) setTodos((prev) => prev.map((t) => (t.id === id ? original : t)));
+        setError(err instanceof Error ? err.message : "Couldn't update todo.");
+      });
+  }
+
   function handleMarkDone(id: string) {
-    setTodos((prev) => prev.map((t) => (t.id === id ? { ...t, done: true } : t)));
-    setTodoDone(id, true).catch((err) => {
-      setTodos((prev) => prev.map((t) => (t.id === id ? { ...t, done: false } : t)));
-      setError(err instanceof Error ? err.message : "Couldn't update todo.");
-    });
+    setDone(id, true);
   }
 
   function handleUndo(id: string) {
-    setTodos((prev) => prev.map((t) => (t.id === id ? { ...t, done: false } : t)));
-    setTodoDone(id, false).catch((err) => {
-      setTodos((prev) => prev.map((t) => (t.id === id ? { ...t, done: true } : t)));
-      setError(err instanceof Error ? err.message : "Couldn't update todo.");
-    });
+    setDone(id, false);
   }
 
   function handleUpdate(
@@ -150,7 +178,12 @@ export function TodosPage() {
       <div className="flex-1 min-h-0 flex flex-col lg:flex-row gap-4">
         <div className="flex-1 min-w-0 flex flex-col min-h-0">
           <div className="shrink-0">
-            <AddTodoForm labels={labels} onAdd={handleCreate} />
+            <AddTodoForm
+              labels={labels}
+              labelId={addLabelId}
+              onLabelChange={setAddLabelId}
+              onAdd={handleCreate}
+            />
 
             {error && (
               <div className="mb-3 flex items-center justify-between gap-2 rounded-lg border-(--line) border-[0.5px] border-solid bg-(--card) px-3 py-2 text-[length:var(--text-pill)] text-red-400">
@@ -168,7 +201,7 @@ export function TodosPage() {
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-1 rounded-lg bg-(--card-alt) p-1">
                 <button
-                  onClick={() => setTab("active")}
+                  onClick={() => selectTab("active")}
                   className={`rounded-md px-3 py-1 text-[length:var(--text-pill)] transition-colors cursor-pointer ${
                     tab === "active" ? "bg-(--card) text-(--fg)" : "text-(--text-muted) hover:text-(--fg)"
                   }`}
@@ -176,7 +209,7 @@ export function TodosPage() {
                   Active ({activeTodos.length})
                 </button>
                 <button
-                  onClick={() => setTab("completed")}
+                  onClick={() => selectTab("completed")}
                   className={`rounded-md px-3 py-1 text-[length:var(--text-pill)] transition-colors cursor-pointer ${
                     tab === "completed" ? "bg-(--card) text-(--fg)" : "text-(--text-muted) hover:text-(--fg)"
                   }`}
@@ -217,10 +250,7 @@ export function TodosPage() {
                   {showLabelMenu && (
                     <div className="absolute right-0 z-10 mt-2 w-52 max-h-56 overflow-y-auto rounded-lg border-(--line) border-[0.5px] border-solid bg-(--card) p-1.5 shadow-lg themed-scrollbar">
                       <button
-                        onClick={() => {
-                          setLabelFilter(null);
-                          setShowLabelMenu(false);
-                        }}
+                        onClick={() => selectLabelFilter(null)}
                         className={`flex w-full items-center rounded-lg px-3 py-1.5 text-left text-[length:var(--text-pill)] transition-colors cursor-pointer ${
                           !labelFilter
                             ? "bg-(--card-alt) text-(--fg)"
@@ -230,10 +260,7 @@ export function TodosPage() {
                         All labels
                       </button>
                       <button
-                        onClick={() => {
-                          setLabelFilter(NO_LABEL_FILTER);
-                          setShowLabelMenu(false);
-                        }}
+                        onClick={() => selectLabelFilter(NO_LABEL_FILTER)}
                         className={`flex w-full items-center gap-1.5 rounded-lg px-3 py-1.5 text-left text-[length:var(--text-pill)] transition-colors cursor-pointer ${
                           isNoLabelFilter
                             ? "bg-(--card-alt) text-(--fg)"
@@ -251,10 +278,7 @@ export function TodosPage() {
                         return (
                           <button
                             key={l.id}
-                            onClick={() => {
-                              setLabelFilter(l.id);
-                              setShowLabelMenu(false);
-                            }}
+                            onClick={() => selectLabelFilter(l.id)}
                             className={`flex w-full items-center gap-1.5 rounded-lg px-3 py-1.5 text-left text-[length:var(--text-pill)] transition-colors cursor-pointer ${
                               labelFilter === l.id
                                 ? "bg-(--card-alt) text-(--fg)"
@@ -292,7 +316,7 @@ export function TodosPage() {
 
                   {showSortMenu && (
                     <div className="absolute right-0 z-10 mt-2 flex items-center gap-1.5 rounded-lg border-(--line) border-[0.5px] border-solid bg-(--card) p-1.5 shadow-lg">
-                      {SORT_OPTIONS.map((option) => (
+                      {SORT_OPTIONS.filter((o) => !o.tab || o.tab === tab).map((option) => (
                         <button
                           key={option.field}
                           onClick={() => setSortField(option.field)}

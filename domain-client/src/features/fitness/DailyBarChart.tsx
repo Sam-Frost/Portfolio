@@ -92,10 +92,10 @@ export function DailyBarChart({ title, points, unit, target, emptyLabel }: Daily
 
             {/* x-axis date ticks */}
             <div className="relative h-3 mt-1 text-[9px] leading-none text-(--text-faint)">
-              {ticks.map((i) => (
+              {ticks.map((i, ti) => (
                 <span
                   key={i}
-                  className="absolute -translate-x-1/2 whitespace-nowrap"
+                  className={`absolute whitespace-nowrap ${edgeAnchor(ti, ticks.length)}`}
                   style={{ left: `${((i + 0.5) / points.length) * 100}%` }}
                 >
                   {formatAxisDate(points[i].date)}
@@ -107,6 +107,16 @@ export function DailyBarChart({ title, points, unit, target, emptyLabel }: Daily
       )}
     </div>
   );
+}
+
+// Keep the first/last axis labels inside the plot's own width (they sit near
+// left:0%/100%): left-align the first, right-align the last, center the rest —
+// otherwise they poke past the card edge and add a stray horizontal scrollbar.
+function edgeAnchor(index: number, count: number): string {
+  if (count <= 1) return "-translate-x-1/2";
+  if (index === 0) return "translate-x-0";
+  if (index === count - 1) return "-translate-x-full";
+  return "-translate-x-1/2";
 }
 
 // Up to 4 roughly-even indexes into a series of length n (always includes

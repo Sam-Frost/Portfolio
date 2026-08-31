@@ -1,8 +1,8 @@
 import { apiRequest } from "../../lib/apiClient";
-import type { Todo } from "./types";
+import type { SortField, Todo } from "./types";
 
 export function fetchTodos(params?: {
-  sortBy: "dateAdded" | "targetDate";
+  sortBy: SortField;
   order: "asc" | "desc";
   labelId?: string | null;
 }): Promise<Todo[]> {

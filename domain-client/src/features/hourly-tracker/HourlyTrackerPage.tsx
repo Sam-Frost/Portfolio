@@ -42,6 +42,7 @@ export function HourlyTrackerPage() {
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [startFormOpen, setStartFormOpen] = useState(false);
 
   // Refetches on session too — not just the visible month — so the
   // calendar/chart pick up a session the moment it finishes, without
@@ -108,11 +109,23 @@ export function HourlyTrackerPage() {
         )}
 
         {!session ? (
-          <StartSessionForm onStart={start} />
+          <div>
+            <button
+              type="button"
+              onClick={() => setStartFormOpen(true)}
+              className="rounded-md bg-(--fg) text-(--bg) px-3 py-1.5 text-[length:var(--text-pill)] cursor-pointer"
+            >
+              Start session
+            </button>
+          </div>
         ) : (
           <div className="bg-(--card) border-(--line) border-[0.5px] border-solid rounded-xl p-4 text-[length:var(--text-pill)] text-(--text-muted)">
             A session is already running — see the floating timer ({Math.floor(remainingSeconds / 60)}m remaining).
           </div>
+        )}
+
+        {startFormOpen && !session && (
+          <StartSessionForm onStart={start} onClose={() => setStartFormOpen(false)} />
         )}
 
         <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_18rem] gap-4">

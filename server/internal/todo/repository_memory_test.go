@@ -63,6 +63,38 @@ func TestMemoryRepository_ListSortsByTargetDateNullsLast(t *testing.T) {
 	assertOrder(t, "desc", desc, withLate.ID, withEarly.ID, noDate.ID)
 }
 
+func TestMemoryRepository_ListSortsByCompletedAtNullsLast(t *testing.T) {
+	repo := NewMemoryRepository()
+	ctx := context.Background()
+	done := true
+
+	firstDone := mustCreate(t, repo, Todo{Name: "first done"})
+	secondDone := mustCreate(t, repo, Todo{Name: "second done"})
+	notDone := mustCreate(t, repo, Todo{Name: "not done"})
+
+	// Completion order is firstDone then secondDone, so secondDone carries the
+	// later completedAt.
+	if _, err := repo.Update(ctx, firstDone.ID, UpdateInput{Done: &done}); err != nil {
+		t.Fatalf("Update firstDone: %v", err)
+	}
+	if _, err := repo.Update(ctx, secondDone.ID, UpdateInput{Done: &done}); err != nil {
+		t.Fatalf("Update secondDone: %v", err)
+	}
+
+	asc, err := repo.List(ctx, SortByCompletedAt, SortAsc, nil)
+	if err != nil {
+		t.Fatalf("List asc: %v", err)
+	}
+	assertOrder(t, "asc", asc, firstDone.ID, secondDone.ID, notDone.ID)
+
+	desc, err := repo.List(ctx, SortByCompletedAt, SortDesc, nil)
+	if err != nil {
+		t.Fatalf("List desc: %v", err)
+	}
+	// The never-completed todo stays last even when order flips.
+	assertOrder(t, "desc", desc, secondDone.ID, firstDone.ID, notDone.ID)
+}
+
 func assertOrder(t *testing.T, label string, got []Todo, wantIDs ...string) {
 	t.Helper()
 	if len(got) != len(wantIDs) {
@@ -90,6 +122,44 @@ func TestMemoryRepository_UpdateAppliesOnlyProvidedFields(t *testing.T) {
 	}
 	if !updated.Done {
 		t.Errorf("Done = false, want true")
+	}
+}
+
+func TestMemoryRepository_UpdateStampsAndClearsCompletedAt(t *testing.T) {
+	repo := NewMemoryRepository()
+	todo := mustCreate(t, repo, Todo{Name: "task"})
+	if todo.CompletedAt != nil {
+		t.Fatalf("CompletedAt = %v on a fresh todo, want nil", todo.CompletedAt)
+	}
+
+	done := true
+	completed, err := repo.Update(context.Background(), todo.ID, UpdateInput{Done: &done})
+	if err != nil {
+		t.Fatalf("Update(done=true): %v", err)
+	}
+	if completed.CompletedAt == nil {
+		t.Fatal("CompletedAt = nil after marking done, want a timestamp")
+	}
+	first := *completed.CompletedAt
+
+	notDone := false
+	undone, err := repo.Update(context.Background(), todo.ID, UpdateInput{Done: &notDone})
+	if err != nil {
+		t.Fatalf("Update(done=false): %v", err)
+	}
+	if undone.CompletedAt != nil {
+		t.Errorf("CompletedAt = %v after undo, want nil", undone.CompletedAt)
+	}
+
+	redone, err := repo.Update(context.Background(), todo.ID, UpdateInput{Done: &done})
+	if err != nil {
+		t.Fatalf("Update(done=true) again: %v", err)
+	}
+	if redone.CompletedAt == nil {
+		t.Fatal("CompletedAt = nil after redo, want a fresh timestamp")
+	}
+	if redone.CompletedAt.Before(first) {
+		t.Errorf("redo CompletedAt %v is before original %v", *redone.CompletedAt, first)
 	}
 }
 

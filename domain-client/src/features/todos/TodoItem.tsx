@@ -58,6 +58,9 @@ export function TodoItem({ todo, labels, onMarkDone, onUndo, onUpdate }: TodoIte
           <span className="flex items-center gap-1 text-[length:var(--text-pill)] text-(--green)">
             <Check size={12} strokeWidth={3} />
             Done
+            {todo.completedAt && (
+              <span className="text-(--text-faint)">· {formatDateShort(todo.completedAt)}</span>
+            )}
           </span>
           <button
             onClick={() => onUndo(todo.id)}
@@ -84,6 +87,9 @@ export function TodoItem({ todo, labels, onMarkDone, onUndo, onUpdate }: TodoIte
         <p className="font-medium text-(--fg)">{todo.name}</p>
         <p className="whitespace-nowrap">Added: {formatDate(todo.dateAdded)}</p>
         {todo.targetDate && <p className="whitespace-nowrap">Due: {formatDate(todo.targetDate)}</p>}
+        {todo.done && todo.completedAt && (
+          <p className="whitespace-nowrap">Done: {formatDate(todo.completedAt)}</p>
+        )}
         {todo.description && (
           <p className="mt-1 border-t-(--line) border-t-[0.5px] border-solid pt-1">{todo.description}</p>
         )}
