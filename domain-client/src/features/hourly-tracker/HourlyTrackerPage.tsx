@@ -62,12 +62,18 @@ export function HourlyTrackerPage() {
   const monthLabel = `${MONTH_LABELS[viewMonth]} ${viewYear}`;
 
   const workedMinutesByDate: Record<string, number> = {};
-  for (const s of summaries) workedMinutesByDate[s.date] = s.workedMinutes;
+  const summaryByDate: Record<string, DailySummary> = {};
+  for (const s of summaries) {
+    workedMinutesByDate[s.date] = s.workedMinutes;
+    summaryByDate[s.date] = s;
+  }
 
   const lastDay = daysInMonth(viewYear, viewMonth);
   const denseSummaries: DailySummary[] = Array.from({ length: lastDay }, (_, i) => {
     const key = monthDayKey(viewYear, viewMonth, i + 1);
-    return { date: key, workedMinutes: workedMinutesByDate[key] ?? 0 };
+    return (
+      summaryByDate[key] ?? { date: key, workedMinutes: 0, professionalMinutes: 0, personalMinutes: 0 }
+    );
   });
 
   const selectedSessions = selectedDate ? sessions.filter((s) => sessionTouchesDay(s, selectedDate)) : [];

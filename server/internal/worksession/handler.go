@@ -58,13 +58,13 @@ func (h *Handler) current(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) complete(w http.ResponseWriter, r *http.Request) {
-	var input CompleteInput
-	if err := httpx.DecodeJSON(r, &input); err != nil {
+	var body FinishBody
+	if err := httpx.DecodeJSON(r, &body); err != nil {
 		httpx.WriteError(w, err)
 		return
 	}
 
-	session, err := h.service.Complete(r.Context(), r.PathValue("id"), input)
+	session, err := h.service.Complete(r.Context(), r.PathValue("id"), body)
 	if err != nil {
 		httpx.WriteError(w, err)
 		return
@@ -74,13 +74,13 @@ func (h *Handler) complete(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) cancel(w http.ResponseWriter, r *http.Request) {
-	var input CancelInput
-	if err := httpx.DecodeJSON(r, &input); err != nil {
+	var body FinishBody
+	if err := httpx.DecodeJSON(r, &body); err != nil {
 		httpx.WriteError(w, err)
 		return
 	}
 
-	session, err := h.service.Cancel(r.Context(), r.PathValue("id"), input)
+	session, err := h.service.Cancel(r.Context(), r.PathValue("id"), body)
 	if err != nil {
 		httpx.WriteError(w, err)
 		return

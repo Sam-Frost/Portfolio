@@ -1,7 +1,8 @@
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import * as api from "./api";
+import type { StartSessionInput } from "./api";
 import { formatClock } from "./dateUtils";
-import type { WorkSession } from "./types";
+import type { FinishPayload, WorkSession } from "./types";
 import { FloatingTimerTile } from "./FloatingTimerTile";
 import { CompleteSessionDialog } from "./CompleteSessionDialog";
 
@@ -10,7 +11,7 @@ interface HourlyTrackerContextValue {
   // "nothing running".
   session: WorkSession | null;
   remainingSeconds: number;
-  start: (plannedMinutes: number) => Promise<void>;
+  start: (input: StartSessionInput) => Promise<void>;
 }
 
 const HourlyTrackerContext = createContext<HourlyTrackerContextValue | null>(null);
@@ -30,7 +31,7 @@ function remainingSecondsFor(session: WorkSession): number {
 // "state that survives navigation across the whole gated app" pattern):
 // holds the single running session (rehydrated from GET /current on
 // mount, so the floating timer survives a page reload), a live countdown,
-// and renders the floating timer tile / the "time's up" note prompt on top
+// and renders the floating timer tile / the "time's up" log prompt on top
 // of whatever page is showing.
 export function HourlyTrackerProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<WorkSession | null>(null);
@@ -53,12 +54,14 @@ export function HourlyTrackerProvider({ children }: { children: ReactNode }) {
 
   // Live countdown, ticking every second while a session is running, and
   // — in the same tick, so it can never see a stale/uninitialized
-  // remainingSeconds from a separate effect — the prompt-for-a-note check
+  // remainingSeconds from a separate effect — the prompt-to-log check
   // the moment it reaches zero. That includes firing immediately on
   // rehydrate if the planned duration already elapsed while the app was
   // closed, but NOT firing on every rehydrate merely because
   // remainingSeconds's initial state (0) hasn't been recomputed yet for a
-  // session that still has time left.
+  // session that still has time left. The session's recorded end time is
+  // fixed server-side at start + planned duration, so this prompt can sit
+  // open indefinitely without the lag inflating the logged session.
   useEffect(() => {
     if (!session) {
       setRemainingSeconds(0);
@@ -97,22 +100,22 @@ export function HourlyTrackerProvider({ children }: { children: ReactNode }) {
     };
   }, [session, remainingSeconds]);
 
-  async function start(plannedMinutes: number) {
-    const created = await api.startSession(plannedMinutes);
+  async function start(input: StartSessionInput) {
+    const created = await api.startSession(input);
     promptedSessionIdRef.current = null;
     setSession(created);
   }
 
-  async function complete(note: string) {
+  async function complete(payload: FinishPayload) {
     if (!session) return;
-    await api.completeSession(session.id, note);
+    await api.completeSession(session.id, payload);
     setSession(null);
     setShowCompleteDialog(false);
   }
 
-  async function cancel(note?: string) {
+  async function cancel(payload: FinishPayload) {
     if (!session) return;
-    await api.cancelSession(session.id, note);
+    await api.cancelSession(session.id, payload);
     setSession(null);
     setShowCompleteDialog(false);
   }

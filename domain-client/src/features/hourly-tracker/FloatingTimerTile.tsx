@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import { X } from "lucide-react";
 import { formatClock } from "./dateUtils";
-import type { WorkSession } from "./types";
+import type { FinishPayload, WorkSession } from "./types";
 import { CancelSessionDialog } from "./CancelSessionDialog";
 
 const POSITION_KEY = "hourlyTracker.tilePosition";
@@ -56,7 +56,7 @@ function savePosition(position: Position): void {
 interface FloatingTimerTileProps {
   session: WorkSession;
   remainingSeconds: number;
-  onCancel: (note?: string) => Promise<void>;
+  onCancel: (payload: FinishPayload) => Promise<void>;
 }
 
 // Fixed-position, draggable across every page in the domain area (rendered
@@ -137,8 +137,8 @@ export function FloatingTimerTile({ session, remainingSeconds, onCancel }: Float
           session={session}
           elapsedSeconds={session.plannedMinutes * 60 - remainingSeconds}
           onCancel={() => setShowCancelConfirm(false)}
-          onConfirm={async (note) => {
-            await onCancel(note);
+          onConfirm={async (payload) => {
+            await onCancel(payload);
             setShowCancelConfirm(false);
           }}
         />

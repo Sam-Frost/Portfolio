@@ -44,7 +44,7 @@ func TestService_StartSucceedsAfterPriorSessionFinished(t *testing.T) {
 	if err != nil {
 		t.Fatalf("first Start: %v", err)
 	}
-	if _, err := svc.Cancel(ctx, first.ID, CancelInput{}); err != nil {
+	if _, err := svc.Cancel(ctx, first.ID, FinishBody{}); err != nil {
 		t.Fatalf("Cancel: %v", err)
 	}
 
@@ -53,7 +53,7 @@ func TestService_StartSucceedsAfterPriorSessionFinished(t *testing.T) {
 	}
 }
 
-func TestService_CompleteRequiresNote(t *testing.T) {
+func TestService_CompleteRequiresGoalOrNote(t *testing.T) {
 	svc := NewService(NewMemoryRepository())
 	ctx := context.Background()
 
@@ -62,14 +62,14 @@ func TestService_CompleteRequiresNote(t *testing.T) {
 		t.Fatalf("Start: %v", err)
 	}
 
-	_, err = svc.Complete(ctx, session.ID, CompleteInput{Note: "   "})
+	_, err = svc.Complete(ctx, session.ID, FinishBody{Note: "   "})
 	assertInvalidInput(t, err)
 }
 
 func TestService_CompleteRejectsUnknownOrNonRunningSession(t *testing.T) {
 	svc := NewService(NewMemoryRepository())
 
-	_, err := svc.Complete(context.Background(), "does-not-exist", CompleteInput{Note: "done"})
+	_, err := svc.Complete(context.Background(), "does-not-exist", FinishBody{Note: "done"})
 	assertInvalidInput(t, err)
 }
 
@@ -83,15 +83,7 @@ func TestService_CompleteSetsStatusAndActualMinutes(t *testing.T) {
 		t.Fatalf("Start: %v", err)
 	}
 
-	// Backdate the session so elapsed time is deterministic and non-zero.
-	started := session.StartedAt.Add(-10 * time.Minute)
-	repo.mu.Lock()
-	s := repo.sessions[session.ID]
-	s.StartedAt = started
-	repo.sessions[session.ID] = s
-	repo.mu.Unlock()
-
-	completed, err := svc.Complete(ctx, session.ID, CompleteInput{Note: "wrote tests"})
+	completed, err := svc.Complete(ctx, session.ID, FinishBody{Note: "wrote tests"})
 	if err != nil {
 		t.Fatalf("Complete: %v", err)
 	}
@@ -101,11 +93,90 @@ func TestService_CompleteSetsStatusAndActualMinutes(t *testing.T) {
 	if completed.Note == nil || *completed.Note != "wrote tests" {
 		t.Errorf("Note = %v, want %q", completed.Note, "wrote tests")
 	}
-	if completed.ActualMinutes == nil || *completed.ActualMinutes < 9 || *completed.ActualMinutes > 10 {
-		t.Errorf("ActualMinutes = %v, want ~10", completed.ActualMinutes)
-	}
 	if completed.EndedAt == nil {
 		t.Error("EndedAt = nil, want set")
+	}
+}
+
+// A completed session ran its full planned duration by definition, so its
+// end time is StartedAt + PlannedMinutes and its actual minutes equal the
+// plan — regardless of how long after the timer elapsed the note is logged
+// (the "time's up" dialog may sit open for hours). This is the bug the
+// end-time-at-log-time behaviour had.
+func TestService_CompleteEndsAtPlannedDurationNotLogTime(t *testing.T) {
+	repo := NewMemoryRepository()
+	svc := NewService(repo)
+	ctx := context.Background()
+
+	session, err := svc.Start(ctx, StartInput{PlannedMinutes: 25})
+	if err != nil {
+		t.Fatalf("Start: %v", err)
+	}
+
+	// Simulate the timer having elapsed 90 minutes ago and the user only
+	// now getting round to logging it.
+	started := session.StartedAt.Add(-115 * time.Minute)
+	repo.mu.Lock()
+	s := repo.sessions[session.ID]
+	s.StartedAt = started
+	repo.sessions[session.ID] = s
+	repo.mu.Unlock()
+
+	completed, err := svc.Complete(ctx, session.ID, FinishBody{Note: "shipped it"})
+	if err != nil {
+		t.Fatalf("Complete: %v", err)
+	}
+	if completed.ActualMinutes == nil || *completed.ActualMinutes != 25 {
+		t.Errorf("ActualMinutes = %v, want 25 (the planned duration)", completed.ActualMinutes)
+	}
+	wantEnd := started.Add(25 * time.Minute)
+	if completed.EndedAt == nil || !completed.EndedAt.Equal(wantEnd) {
+		t.Errorf("EndedAt = %v, want %v (StartedAt + planned)", completed.EndedAt, wantEnd)
+	}
+}
+
+func TestService_CompleteRecordsGoalsWithDoneFlags(t *testing.T) {
+	svc := NewService(NewMemoryRepository())
+	ctx := context.Background()
+
+	session, err := svc.Start(ctx, StartInput{
+		PlannedMinutes: 25,
+		Goals:          []string{"write handler", "write tests", "  "},
+	})
+	if err != nil {
+		t.Fatalf("Start: %v", err)
+	}
+	if len(session.Goals) != 2 {
+		t.Fatalf("Start Goals = %v, want 2 (blank dropped)", session.Goals)
+	}
+
+	completed, err := svc.Complete(ctx, session.ID, FinishBody{
+		Goals: []Goal{{Text: "write handler", Done: true}, {Text: "write tests", Done: false}},
+	})
+	if err != nil {
+		t.Fatalf("Complete: %v", err)
+	}
+	if len(completed.Goals) != 2 || !completed.Goals[0].Done || completed.Goals[1].Done {
+		t.Errorf("Goals = %v, want [handler done, tests not done]", completed.Goals)
+	}
+}
+
+func TestService_StartRejectsUnknownCategory(t *testing.T) {
+	svc := NewService(NewMemoryRepository())
+
+	_, err := svc.Start(context.Background(), StartInput{PlannedMinutes: 25, Category: "hobby"})
+	assertInvalidInput(t, err)
+}
+
+func TestService_StartDefaultsCategoryToProfessional(t *testing.T) {
+	svc := NewService(NewMemoryRepository())
+
+	session, err := svc.Start(context.Background(), StartInput{PlannedMinutes: 25})
+	if err != nil {
+		t.Fatalf("Start: %v", err)
+	}
+	if session.Category != CategoryProfessional {
+		t.Errorf("Category = %q, want %q", session.Category, CategoryProfessional)
 	}
 }
 
@@ -118,7 +189,7 @@ func TestService_CancelAllowsEmptyNote(t *testing.T) {
 		t.Fatalf("Start: %v", err)
 	}
 
-	cancelled, err := svc.Cancel(ctx, session.ID, CancelInput{})
+	cancelled, err := svc.Cancel(ctx, session.ID, FinishBody{})
 	if err != nil {
 		t.Fatalf("Cancel: %v", err)
 	}
@@ -269,7 +340,7 @@ func TestService_DailySummaryIncludesCancelledSessions(t *testing.T) {
 	repo.sessions[session.ID] = s
 	repo.mu.Unlock()
 
-	if _, err := svc.Cancel(ctx, session.ID, CancelInput{}); err != nil {
+	if _, err := svc.Cancel(ctx, session.ID, FinishBody{}); err != nil {
 		t.Fatalf("Cancel: %v", err)
 	}
 
@@ -287,5 +358,49 @@ func TestService_DailySummaryIncludesCancelledSessions(t *testing.T) {
 	}
 	if summary[0].WorkedMinutes < 4 || summary[0].WorkedMinutes > 5 {
 		t.Errorf("WorkedMinutes = %d, want ~5", summary[0].WorkedMinutes)
+	}
+}
+
+func TestService_DailySummarySplitsMinutesByCategory(t *testing.T) {
+	repo := NewMemoryRepository()
+	svc := NewService(repo)
+	ctx := context.Background()
+
+	// One professional and one personal session on the same IST day, each
+	// backdated so it has real elapsed minutes to attribute.
+	for _, tc := range []struct {
+		category Category
+		ago      time.Duration
+	}{
+		{CategoryProfessional, 40 * time.Minute},
+		{CategoryPersonal, 20 * time.Minute},
+	} {
+		session, err := svc.Start(ctx, StartInput{PlannedMinutes: 5, Category: tc.category})
+		if err != nil {
+			t.Fatalf("Start: %v", err)
+		}
+		repo.mu.Lock()
+		s := repo.sessions[session.ID]
+		s.StartedAt = s.StartedAt.Add(-tc.ago)
+		repo.sessions[session.ID] = s
+		repo.mu.Unlock()
+
+		if _, err := svc.Complete(ctx, session.ID, FinishBody{Note: "done"}); err != nil {
+			t.Fatalf("Complete: %v", err)
+		}
+	}
+
+	dayStr := time.Now().In(istLocation).Format(DateLayout)
+	from, _ := ParseISTDayStart(dayStr)
+	summary, err := svc.DailySummary(ctx, from, from.AddDate(0, 0, 1))
+	if err != nil {
+		t.Fatalf("DailySummary: %v", err)
+	}
+	if len(summary) != 1 {
+		t.Fatalf("DailySummary = %v, want one day", summary)
+	}
+	d := summary[0]
+	if d.ProfessionalMinutes != 5 || d.PersonalMinutes != 5 || d.WorkedMinutes != 10 {
+		t.Errorf("summary = %+v, want professional=5 personal=5 worked=10", d)
 	}
 }

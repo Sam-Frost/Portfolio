@@ -1,5 +1,5 @@
 import { apiRequest } from "../../lib/apiClient";
-import type { DailySummary, WorkSession } from "./types";
+import type { DailySummary, FinishPayload, SessionCategory, WorkSession } from "./types";
 
 // undefined (not just null) on 204 — see apiRequest — when no session is
 // currently running.
@@ -7,24 +7,31 @@ export function fetchCurrentSession(): Promise<WorkSession | undefined> {
   return apiRequest("/api/work-sessions/current");
 }
 
-export function startSession(plannedMinutes: number): Promise<WorkSession> {
+export interface StartSessionInput {
+  plannedMinutes: number;
+  category: SessionCategory;
+  goals: string[];
+  startNote: string;
+}
+
+export function startSession(input: StartSessionInput): Promise<WorkSession> {
   return apiRequest("/api/work-sessions", {
     method: "POST",
-    body: JSON.stringify({ plannedMinutes }),
+    body: JSON.stringify(input),
   });
 }
 
-export function completeSession(id: string, note: string): Promise<WorkSession> {
+export function completeSession(id: string, payload: FinishPayload): Promise<WorkSession> {
   return apiRequest(`/api/work-sessions/${id}/complete`, {
     method: "POST",
-    body: JSON.stringify({ note }),
+    body: JSON.stringify(payload),
   });
 }
 
-export function cancelSession(id: string, note?: string): Promise<WorkSession> {
+export function cancelSession(id: string, payload: FinishPayload): Promise<WorkSession> {
   return apiRequest(`/api/work-sessions/${id}/cancel`, {
     method: "POST",
-    body: JSON.stringify({ note: note ?? null }),
+    body: JSON.stringify(payload),
   });
 }
 
