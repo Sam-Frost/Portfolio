@@ -172,11 +172,11 @@ export function TodosPage() {
   const noLabelCounts = labelCounts(todos, null);
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="min-h-full lg:h-full flex flex-col">
       {toast && <Toast key={toast.key} message={toast.message} onDone={() => setToast(null)} />}
 
       <div className="flex-1 min-h-0 flex flex-col lg:flex-row gap-4">
-        <div className="flex-1 min-w-0 flex flex-col min-h-0">
+        <div className="flex-1 min-w-0 flex flex-col lg:min-h-0">
           <div className="shrink-0">
             <AddTodoForm
               labels={labels}
@@ -198,7 +198,7 @@ export function TodosPage() {
               </div>
             )}
 
-            <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center justify-between gap-2 flex-wrap mb-3">
               <div className="flex items-center gap-1 rounded-lg bg-(--card-alt) p-1">
                 <button
                   onClick={() => selectTab("active")}
@@ -343,7 +343,7 @@ export function TodosPage() {
             </div>
           </div>
 
-          <div className="flex-1 min-h-0 overflow-y-auto themed-scrollbar pr-2">
+          <div className="flex-1 lg:min-h-0 lg:overflow-y-auto themed-scrollbar lg:pr-2">
             {loading && (
               <div className="bg-(--card) border-(--line) border-[0.5px] border-solid rounded-xl p-8 text-center text-(--text-faint) text-[length:var(--text-caption)]">
                 Loading todos...
@@ -373,7 +373,7 @@ export function TodosPage() {
           </div>
         </div>
 
-        <div className="lg:w-64 shrink-0 flex flex-col gap-4 min-h-0 overflow-y-auto themed-scrollbar">
+        <div className="lg:w-64 shrink-0 flex flex-col gap-4 lg:min-h-0 lg:overflow-y-auto themed-scrollbar">
           <LabelCountChart todos={todos} labels={labels} tab={tab} />
           <LabelDistributionPie todos={todos} labels={labels} tab={tab} />
           <DueTodayPanel todos={todos} labels={labels} />

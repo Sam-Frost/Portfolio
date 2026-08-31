@@ -154,8 +154,8 @@ export function NoteEditorPage() {
   const { label, dotClass } = STATUS_COPY[status];
 
   return (
-    <div className="h-full flex flex-col">
-      <div className="shrink-0 flex items-center justify-between mb-4">
+    <div className="min-h-full lg:h-full flex flex-col">
+      <div className="shrink-0 flex items-center justify-between gap-3 flex-wrap mb-4">
         <button
           onClick={() => navigate("/notepad")}
           className="flex items-center gap-1.5 text-[length:var(--text-caption)] text-(--text-muted) hover:text-(--fg) transition-colors cursor-pointer"

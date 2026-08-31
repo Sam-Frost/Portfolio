@@ -127,8 +127,8 @@ export function DiaryEntryPage() {
   const { label, dotClass } = STATUS_COPY[status];
 
   return (
-    <div className="h-full flex flex-col">
-      <div className="shrink-0 flex items-center justify-between mb-4">
+    <div className="min-h-full lg:h-full flex flex-col">
+      <div className="shrink-0 flex items-center justify-between gap-3 flex-wrap mb-4">
         <button
           onClick={() => navigate("/diary")}
           className="flex items-center gap-1.5 text-[length:var(--text-caption)] text-(--text-muted) hover:text-(--fg) transition-colors cursor-pointer"
@@ -159,7 +159,7 @@ export function DiaryEntryPage() {
       )}
 
       {!exists && locked ? (
-        <div className="flex-1 min-h-0 flex items-center justify-center rounded-lg border-(--line) border-dashed border-[1px] text-(--text-faint) text-[length:var(--text-caption)] text-center px-6">
+        <div className="flex-1 min-h-[40vh] lg:min-h-0 flex items-center justify-center rounded-lg border-(--line) border-dashed border-[1px] text-(--text-faint) text-[length:var(--text-caption)] text-center px-6">
           No entry was written for this day, and its edit window has closed.
         </div>
       ) : (

@@ -66,7 +66,7 @@ export function BlogFormDialog({ initial, onClose, onSubmit }: Props) {
     >
       {error && <p className="mb-3 text-[length:var(--text-pill)] text-red-400">{error}</p>}
 
-      <div className="flex gap-3">
+      <div className="flex flex-col sm:flex-row gap-x-3">
         <div className="flex-1">
           <Field label="Title">
             <TextField value={title} onChange={setTitle} autoFocus />
@@ -84,7 +84,7 @@ export function BlogFormDialog({ initial, onClose, onSubmit }: Props) {
           </Field>
         </div>
       </div>
-      <div className="flex gap-3">
+      <div className="flex flex-col sm:flex-row gap-x-3">
         <div className="flex-1">
           <Field label="Read time">
             <TextField value={readTime} onChange={setReadTime} placeholder="5 min read" />

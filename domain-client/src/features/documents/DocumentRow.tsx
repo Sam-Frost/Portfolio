@@ -47,7 +47,7 @@ export function DocumentRow({
         <LabelPicker labels={labels} selectedId={document.labelId} onChange={onLabelChange} />
       </div>
 
-      <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+      <div className="opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
         <RowMenu
           actions={[
             { label: "Download", icon: <Download size={13} />, onSelect: onDownload },

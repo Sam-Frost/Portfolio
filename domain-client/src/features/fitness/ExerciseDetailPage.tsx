@@ -20,7 +20,7 @@ export function ExerciseDetailPage() {
   if (!exerciseId) return null;
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="min-h-full lg:h-full flex flex-col">
       <div className="shrink-0">
         <Link
           to={backTo}
@@ -40,7 +40,7 @@ export function ExerciseDetailPage() {
         )}
       </div>
 
-      <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden themed-scrollbar pb-2">
+      <div className="flex-1 lg:min-h-0 lg:overflow-y-auto overflow-x-hidden themed-scrollbar pb-2">
         <ExerciseDetail
           key={exerciseId}
           exerciseId={exerciseId}

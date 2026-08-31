@@ -97,8 +97,8 @@ export function NotepadPage() {
     }`;
 
   return (
-    <div className="h-full flex flex-col">
-      <div className="shrink-0 flex items-center justify-between mb-3">
+    <div className="min-h-full lg:h-full flex flex-col">
+      <div className="shrink-0 flex items-center justify-between gap-2 flex-wrap mb-3">
         <div className="flex items-center gap-1">
           <button onClick={() => setView("active")} className={tabClass(view === "active")}>
             Notes
@@ -165,7 +165,7 @@ export function NotepadPage() {
         </div>
       )}
 
-      <div className="flex-1 min-h-0 overflow-y-auto themed-scrollbar">
+      <div className="flex-1 lg:min-h-0 lg:overflow-y-auto themed-scrollbar">
         {loading && (
           <div className="bg-(--card) border-(--line) border-[0.5px] border-solid rounded-xl p-8 text-center text-(--text-faint) text-[length:var(--text-caption)]">
             Loading notes...
@@ -199,7 +199,7 @@ export function NotepadPage() {
                 </span>
                 <span className="text-[length:var(--text-pill)] text-(--text-faint)">{formatDate(note.createdAt)}</span>
 
-                <div className="absolute top-2 right-2 flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                <div className="absolute top-2 right-2 flex items-center gap-1.5 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
                   {view === "active" && (
                     <button
                       onClick={(e) => {

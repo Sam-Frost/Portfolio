@@ -45,7 +45,7 @@ export function UpskillTopicsPage() {
   }
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="min-h-full lg:h-full flex flex-col">
       <div className="shrink-0">
         <AddTopicForm onAdd={handleCreate} />
 
@@ -63,7 +63,7 @@ export function UpskillTopicsPage() {
         )}
       </div>
 
-      <div className="flex-1 min-h-0 overflow-y-auto themed-scrollbar">
+      <div className="flex-1 lg:min-h-0 lg:overflow-y-auto themed-scrollbar">
         {loading && (
           <div className="bg-(--card) border-(--line) border-[0.5px] border-solid rounded-xl p-8 text-center text-(--text-faint) text-[length:var(--text-caption)]">
             Loading topics...

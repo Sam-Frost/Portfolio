@@ -39,7 +39,7 @@ export function RichTextEditor({ initialContentHtml, onChange, readOnly = false,
   }
 
   return (
-    <div className="flex-1 min-h-0 flex flex-col">
+    <div className="flex flex-col lg:flex-1 lg:min-h-0">
       {!readOnly && (
         <div className="shrink-0">
           <RichTextToolbar editorRef={editorRef} onChange={handleInput} />
@@ -51,8 +51,8 @@ export function RichTextEditor({ initialContentHtml, onChange, readOnly = false,
         contentEditable={!readOnly}
         suppressContentEditableWarning
         onInput={readOnly ? undefined : handleInput}
-        className={`flex-1 min-h-0 overflow-y-auto themed-scrollbar rounded-lg border-(--line) border-[0.5px] border-solid bg-(--card) px-4 py-3 text-[length:var(--text-caption)] text-(--fg) outline-none [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_h1]:text-xl [&_h1]:font-semibold [&_h2]:text-lg [&_h2]:font-semibold [&_h3]:text-base [&_h3]:font-semibold ${
-          readOnly ? "cursor-default" : ""
+        className={`lg:min-h-0 lg:flex-1 lg:overflow-y-auto themed-scrollbar rounded-lg border-(--line) border-[0.5px] border-solid bg-(--card) px-4 py-3 text-[length:var(--text-caption)] text-(--fg) outline-none [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_h1]:text-xl [&_h1]:font-semibold [&_h2]:text-lg [&_h2]:font-semibold [&_h3]:text-base [&_h3]:font-semibold ${
+          readOnly ? "cursor-default" : "min-h-[50vh]"
         } ${className ?? ""}`}
       />
     </div>

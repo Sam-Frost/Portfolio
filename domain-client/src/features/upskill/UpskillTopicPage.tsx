@@ -126,7 +126,7 @@ export function UpskillTopicPage() {
   if (!topic) return null;
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="min-h-full lg:h-full flex flex-col">
       <div className="shrink-0">
         <Link
           to="/upskill"
@@ -159,11 +159,11 @@ export function UpskillTopicPage() {
         )}
       </div>
 
-      <div className="flex-1 min-h-0 flex gap-4">
-        <div className="flex-1 min-w-0 overflow-y-auto themed-scrollbar">
+      <div className="flex-1 lg:min-h-0 flex flex-col lg:flex-row gap-4">
+        <div className="order-2 lg:order-1 flex-1 min-w-0 lg:overflow-y-auto themed-scrollbar">
           {subtopics.length === 0 && (
             <div className="bg-(--card) border-(--line) border-[0.5px] border-solid rounded-xl p-8 text-center text-(--text-faint) text-[length:var(--text-caption)]">
-              No subtopics yet. Add one on the right.
+              No subtopics yet. Add your first one to get started.
             </div>
           )}
 
@@ -184,7 +184,7 @@ export function UpskillTopicPage() {
           )}
         </div>
 
-        <div className="shrink-0 w-80 flex flex-col overflow-y-auto themed-scrollbar">
+        <div className="order-1 lg:order-2 lg:shrink-0 w-full lg:w-80 flex flex-col lg:overflow-y-auto themed-scrollbar">
           <AddSubtopicForm onAdd={handleCreateSubtopic} />
 
           <div className="bg-(--card) border-(--line) border-[0.5px] border-solid rounded-xl px-4 py-3">

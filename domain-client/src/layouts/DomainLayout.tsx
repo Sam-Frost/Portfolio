@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { Outlet, useMatches } from "react-router-dom";
-import { LogOut } from "lucide-react";
+import { Outlet, useLocation, useMatches } from "react-router-dom";
+import { LogOut, Menu } from "lucide-react";
 import { DomainSidebar } from "../components/DomainSidebar";
 import { LeaveDomainDialog } from "../components/LeaveDomainDialog";
 import { PUBLIC_SITE_URL } from "../config";
@@ -18,7 +18,9 @@ export function DomainLayout() {
   const matches = useMatches();
   const handle = [...matches].reverse().find((match) => match.handle)?.handle as RouteHandle | undefined;
   const [showLeaveDialog, setShowLeaveDialog] = useState(false);
+  const [navOpen, setNavOpen] = useState(false);
   const [settings, setSettings] = useState<Settings | null>(null);
+  const location = useLocation();
   // Consumed once per login (see markJustLoggedIn/consumeJustLoggedIn) so the
   // countdown popup only appears right after signing in, not on every
   // navigation or page reload within the same session.
@@ -33,23 +35,39 @@ export function DomainLayout() {
       });
   }, []);
 
+  // Close the mobile nav drawer whenever the route changes (covers programmatic
+  // navigation, not just sidebar link clicks).
+  useEffect(() => {
+    setNavOpen(false);
+  }, [location.pathname]);
+
   const goalDate = settings?.timeLeftClock.goalDate;
 
   return (
     <SpotifyPlayerProvider>
       <HourlyTrackerProvider>
-        <div className="h-screen flex bg-(--bg) overflow-hidden">
-          <DomainSidebar />
+        <div className="h-dvh flex bg-(--bg) overflow-hidden">
+          <DomainSidebar open={navOpen} onClose={() => setNavOpen(false)} />
           <div className="flex-1 flex flex-col min-w-0">
-            <div className="shrink-0 border-b-[0.5px] border-(--line-soft) px-6 py-4 grid grid-cols-[1fr_auto_1fr] items-center gap-4">
-              <div className="min-w-0">
-                <span className="font-space font-semibold text-(--fg) truncate block">{handle?.title ?? "Domain"}</span>
-                {handle?.subtitle && (
-                  <p className="text-[length:var(--text-caption)] text-(--text-muted) truncate">{handle.subtitle}</p>
-                )}
+            <div className="shrink-0 border-b-[0.5px] border-(--line-soft) px-4 sm:px-6 py-3 sm:py-4 grid grid-cols-[1fr_auto] sm:grid-cols-[1fr_auto_1fr] items-center gap-3 sm:gap-4">
+              <div className="min-w-0 flex items-center gap-2 sm:gap-3">
+                <button
+                  type="button"
+                  className="lg:hidden -ml-1 shrink-0 rounded-md p-1.5 text-(--text-muted) hover:text-(--fg) hover:bg-(--card-alt) transition-colors cursor-pointer"
+                  onClick={() => setNavOpen(true)}
+                  aria-label="Open navigation menu"
+                >
+                  <Menu size={18} />
+                </button>
+                <div className="min-w-0">
+                  <span className="font-space font-semibold text-(--fg) truncate block">{handle?.title ?? "Domain"}</span>
+                  {handle?.subtitle && (
+                    <p className="text-[length:var(--text-caption)] text-(--text-muted) truncate">{handle.subtitle}</p>
+                  )}
+                </div>
               </div>
 
-              <div className="flex justify-center">
+              <div className="hidden sm:flex justify-center">
                 {settings && goalDate && <TimeLeftClock goalDate={goalDate} format={settings.timeLeftClock.format} />}
               </div>
 
@@ -58,7 +76,7 @@ export function DomainLayout() {
                 onClick={() => setShowLeaveDialog(true)}
               >
                 <LogOut size={14} />
-                Leave Domain
+                <span className="hidden sm:inline">Leave Domain</span>
               </button>
             </div>
             {/* min-h-0 lets a page (e.g. Todos) opt into its own internal scroll
@@ -66,7 +84,7 @@ export function DomainLayout() {
                 page-level overlays (e.g. Toast) to this non-sidebar content
                 area instead of the full viewport. */}
             <div
-              className={`relative flex-1 min-h-0 overflow-hidden px-6 py-6 w-full ${
+              className={`relative flex-1 min-h-0 overflow-y-auto lg:overflow-hidden px-4 sm:px-6 py-4 sm:py-6 w-full ${
                 handle?.fullWidth ? "" : "max-w-(--maxw) mx-auto"
               }`}
             >

@@ -134,7 +134,7 @@ export function WeightTab({ cycle, onError }: WeightTabProps) {
                   <button
                     onClick={() => handleDelete(l.id)}
                     aria-label="Delete weigh-in"
-                    className="flex items-center justify-center size-6 rounded-md text-(--text-faint) opacity-0 group-hover:opacity-100 hover:text-(--fg) transition-opacity cursor-pointer"
+                    className="flex items-center justify-center size-6 rounded-md text-(--text-faint) opacity-100 lg:opacity-0 lg:group-hover:opacity-100 hover:text-(--fg) transition-opacity cursor-pointer"
                   >
                     <Trash2 size={12} />
                   </button>

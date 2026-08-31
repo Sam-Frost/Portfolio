@@ -90,7 +90,7 @@ export function FitnessCyclePage() {
   if (!cycle) return null;
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="min-h-full lg:h-full flex flex-col">
       <div className="shrink-0">
         <Link
           to="/fitness"
@@ -100,7 +100,7 @@ export function FitnessCyclePage() {
           All cycles
         </Link>
 
-        <div className="flex items-start justify-between gap-4 mb-4">
+        <div className="flex items-start justify-between gap-4 flex-wrap mb-4">
           <div
             onDoubleClick={() => setEditing(true)}
             role="button"
@@ -163,7 +163,7 @@ export function FitnessCyclePage() {
         )}
       </div>
 
-      <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden themed-scrollbar pb-2">
+      <div className="flex-1 lg:min-h-0 lg:overflow-y-auto overflow-x-hidden themed-scrollbar pb-2">
         {tab === "exercise" && <ExerciseTab cycleId={cycle.id} onError={setError} />}
         {tab === "weight" && <WeightTab cycle={cycle} onError={setError} />}
         {tab === "protein" && <ProteinTab cycle={cycle} onError={setError} />}

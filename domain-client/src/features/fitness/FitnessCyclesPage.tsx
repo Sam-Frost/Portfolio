@@ -78,7 +78,7 @@ function CycleRow({
               e.stopPropagation();
               onActivate();
             }}
-            className="rounded-md border-(--line) border-[0.5px] border-solid px-2 py-1 text-[9px] uppercase tracking-wide text-(--text-muted) opacity-0 group-hover:opacity-100 hover:text-(--fg) hover:bg-(--card-alt) transition-opacity cursor-pointer"
+            className="rounded-md border-(--line) border-[0.5px] border-solid px-2 py-1 text-[9px] uppercase tracking-wide text-(--text-muted) opacity-100 lg:opacity-0 lg:group-hover:opacity-100 hover:text-(--fg) hover:bg-(--card-alt) transition-opacity cursor-pointer"
           >
             Make active
           </button>
@@ -89,7 +89,7 @@ function CycleRow({
             setConfirming(true);
           }}
           aria-label="Delete cycle"
-          className="flex items-center justify-center size-6 rounded-md text-(--text-faint) opacity-0 group-hover:opacity-100 hover:text-(--fg) hover:bg-(--card-alt) transition-opacity cursor-pointer"
+          className="flex items-center justify-center size-6 rounded-md text-(--text-faint) opacity-100 lg:opacity-0 lg:group-hover:opacity-100 hover:text-(--fg) hover:bg-(--card-alt) transition-opacity cursor-pointer"
         >
           <X size={13} />
         </button>
@@ -165,7 +165,7 @@ export function FitnessCyclesPage() {
   }
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="min-h-full lg:h-full flex flex-col">
       <div className="shrink-0">
         <StartCycleForm onStart={handleStart} />
 
@@ -179,7 +179,7 @@ export function FitnessCyclesPage() {
         )}
       </div>
 
-      <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden themed-scrollbar">
+      <div className="flex-1 lg:min-h-0 lg:overflow-y-auto overflow-x-hidden themed-scrollbar">
         {loading && (
           <div className="bg-(--card) border-(--line) border-[0.5px] border-solid rounded-xl p-8 text-center text-(--text-faint) text-[length:var(--text-caption)]">
             Loading cycles...

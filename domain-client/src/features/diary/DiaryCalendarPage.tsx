@@ -64,8 +64,8 @@ export function DiaryCalendarPage() {
   const label = MONTH_LABEL_FORMAT.format(new Date(year, month, 1));
 
   return (
-    <div className="h-full flex flex-col">
-      <div className="shrink-0 flex items-center justify-between mb-4">
+    <div className="min-h-full lg:h-full flex flex-col">
+      <div className="shrink-0 flex items-center justify-between gap-2 flex-wrap mb-4">
         <h1 className="text-xl font-space font-semibold text-(--fg)">Personal Diary</h1>
         <button
           onClick={() => navigate(`/diary/${today}`)}
@@ -105,7 +105,7 @@ export function DiaryCalendarPage() {
         </div>
       )}
 
-      <div className="flex-1 min-h-0 overflow-y-auto themed-scrollbar">
+      <div className="flex-1 lg:min-h-0 lg:overflow-y-auto themed-scrollbar">
         <CalendarGrid
           year={year}
           month={month}

@@ -40,7 +40,7 @@ export function TopicCard({ topic, onUpdate, onDelete }: TopicCardProps) {
             setConfirmingDelete(true);
           }}
           aria-label="Delete topic"
-          className="shrink-0 flex items-center justify-center size-6 rounded-md text-(--text-faint) opacity-0 group-hover:opacity-100 hover:text-(--fg) hover:bg-(--card-alt) transition-opacity cursor-pointer"
+          className="shrink-0 flex items-center justify-center size-6 rounded-md text-(--text-faint) opacity-100 lg:opacity-0 lg:group-hover:opacity-100 hover:text-(--fg) hover:bg-(--card-alt) transition-opacity cursor-pointer"
         >
           <Trash2 size={13} />
         </button>

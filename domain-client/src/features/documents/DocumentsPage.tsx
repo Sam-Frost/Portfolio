@@ -156,7 +156,7 @@ export function DocumentsPage() {
 
   return (
     <div
-      className="h-full flex flex-col"
+      className="min-h-full lg:h-full flex flex-col"
       onDragOver={(e) => {
         e.preventDefault();
         setDragging(true);
@@ -184,7 +184,7 @@ export function DocumentsPage() {
       />
 
       <div className="shrink-0">
-        <div className="mb-3 flex items-center justify-between gap-3">
+        <div className="mb-3 flex items-center justify-between gap-3 flex-wrap">
           <Breadcrumb folders={folders} currentFolderId={currentFolderId} onNavigate={setCurrentFolderId} />
 
           <div className="flex items-center gap-1.5 shrink-0">
@@ -307,7 +307,7 @@ export function DocumentsPage() {
         <UploadProgressList uploads={uploads} onDismiss={clearFinished} />
       </div>
 
-      <div className="relative flex-1 min-h-0 overflow-y-auto themed-scrollbar pr-1">
+      <div className="relative flex-1 lg:min-h-0 lg:overflow-y-auto themed-scrollbar lg:pr-1">
         {dragging && (
           <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center rounded-xl border-2 border-dashed border-(--line-strong) bg-(--bg)/70 text-[length:var(--text-caption)] text-(--text-muted)">
             Drop files to upload{currentFolderId ? " into this folder" : ""}

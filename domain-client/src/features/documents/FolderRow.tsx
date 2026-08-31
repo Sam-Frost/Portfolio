@@ -21,7 +21,7 @@ export function FolderRow({ folder, onOpen, onRename, onMove, onDelete }: Folder
         <span className="truncate text-[length:var(--text-caption)] text-(--fg)">{folder.name}</span>
       </button>
 
-      <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+      <div className="opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
         <RowMenu
           actions={[
             { label: "Rename", icon: <Pencil size={13} />, onSelect: onRename },
