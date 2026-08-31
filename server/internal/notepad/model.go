@@ -14,6 +14,11 @@ type Note struct {
 	Locked      bool      `json:"locked"`
 	CreatedAt   time.Time `json:"createdAt"`
 	UpdatedAt   time.Time `json:"updatedAt"`
+
+	// Scratch marks the singleton "Random Notepad" jot buffer (see
+	// Repository.Scratch). It's persistence-internal — it only tells List to
+	// skip the note — so it's not part of the JSON contract.
+	Scratch bool `json:"-"`
 }
 
 type NoteSummary struct {

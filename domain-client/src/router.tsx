@@ -10,6 +10,7 @@ import { TodosPage } from "./features/todos/TodosPage";
 import { SettingsPage } from "./features/settings/SettingsPage";
 import { NotepadPage } from "./features/notepad/NotepadPage";
 import { NoteEditorPage } from "./features/notepad/NoteEditorPage";
+import { ScratchNotePage } from "./features/notepad/ScratchNotePage";
 import { UpskillTopicsPage } from "./features/upskill/UpskillTopicsPage";
 import { UpskillTopicPage } from "./features/upskill/UpskillTopicPage";
 import { DiaryCalendarPage } from "./features/diary/DiaryCalendarPage";
@@ -64,6 +65,11 @@ export const router = createBrowserRouter([
           {
             path: "notepad",
             element: <NotepadPage />,
+            handle: { title: "Notepad" },
+          },
+          {
+            path: "notepad/scratch",
+            element: <ScratchNotePage />,
             handle: { title: "Notepad" },
           },
           {

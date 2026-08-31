@@ -17,6 +17,8 @@ func NewHandler(service *Service) *Handler {
 func (h *Handler) Register(mux *http.ServeMux) {
 	mux.HandleFunc("GET /api/notes", h.list)
 	mux.HandleFunc("POST /api/notes", h.create)
+	// More specific than GET /api/notes/{id}, so ServeMux routes it here.
+	mux.HandleFunc("GET /api/notes/scratch", h.scratch)
 	mux.HandleFunc("GET /api/notes/{id}", h.get)
 	mux.HandleFunc("PATCH /api/notes/{id}", h.update)
 	mux.HandleFunc("DELETE /api/notes/{id}", h.delete)
@@ -48,6 +50,16 @@ func (h *Handler) create(w http.ResponseWriter, r *http.Request) {
 	}
 
 	httpx.WriteJSON(w, http.StatusCreated, n)
+}
+
+func (h *Handler) scratch(w http.ResponseWriter, r *http.Request) {
+	n, err := h.service.Scratch(r.Context())
+	if err != nil {
+		httpx.WriteError(w, err)
+		return
+	}
+
+	httpx.WriteJSON(w, http.StatusOK, n)
 }
 
 func (h *Handler) get(w http.ResponseWriter, r *http.Request) {
