@@ -17,8 +17,11 @@ interface SpotifyContextValue {
   thisDeviceId: string | null;
   refreshDevices: () => Promise<void>;
 
-  playTrack: (uri: string) => Promise<void>;
-  playPlaylist: (playlistId: string) => Promise<void>;
+  // Plays a list of tracks as a queue starting at offsetUri, so playback
+  // continues to the next one instead of stopping after a single track.
+  playTracks: (uris: string[], offsetUri: string) => Promise<void>;
+  // offsetUri starts the playlist at that track while keeping the rest queued.
+  playPlaylist: (playlistId: string, offsetUri?: string) => Promise<void>;
   togglePlayPause: () => Promise<void>;
   next: () => Promise<void>;
   previous: () => Promise<void>;
@@ -202,8 +205,9 @@ export function SpotifyPlayerProvider({ children }: { children: ReactNode }) {
     devices,
     thisDeviceId,
     refreshDevices,
-    playTrack: (uri) => withRefresh(() => api.playTrack(uri, bootstrapDeviceId)),
-    playPlaylist: (playlistId) => withRefresh(() => api.playPlaylist(playlistId, bootstrapDeviceId)),
+    playTracks: (uris, offsetUri) => withRefresh(() => api.playTracks(uris, offsetUri, bootstrapDeviceId)),
+    playPlaylist: (playlistId, offsetUri) =>
+      withRefresh(() => api.playPlaylist(playlistId, offsetUri, bootstrapDeviceId)),
     togglePlayPause: () =>
       withRefresh(() => (playback?.isPlaying ? api.pause() : api.resume(bootstrapDeviceId))),
     next: () => withRefresh(api.next),

@@ -42,13 +42,18 @@ var scopes = []string{
 // playInput selects what PUT /me/player/play should start: either a
 // context (playlist/album) or an explicit list of track URIs. At most one
 // of ContextURI/URIs should be set; neither set means "resume whatever was
-// last playing". DeviceID targets a specific device directly — Spotify
-// otherwise requires some device to already be marked *active* (playing
-// natively, or explicitly transferred to) before /play will accept
-// anything, which a freshly-registered Web Playback SDK device isn't yet.
+// last playing". OffsetURI, when set, starts playback at that track within
+// the context/URIs instead of the first — so the rest of the playlist (or
+// list) stays queued and keeps playing after it, rather than stopping once
+// a single track ends. DeviceID targets a specific device directly —
+// Spotify otherwise requires some device to already be marked *active*
+// (playing natively, or explicitly transferred to) before /play will
+// accept anything, which a freshly-registered Web Playback SDK device
+// isn't yet.
 type playInput struct {
 	ContextURI string
 	URIs       []string
+	OffsetURI  string
 	DeviceID   string
 }
 
@@ -336,12 +341,15 @@ func (c *apiClient) transferPlayback(ctx context.Context, accessToken, deviceID 
 }
 
 func (c *apiClient) play(ctx context.Context, accessToken string, input playInput) error {
-	var body any
+	var body map[string]any
 	switch {
 	case len(input.URIs) > 0:
 		body = map[string]any{"uris": input.URIs}
 	case input.ContextURI != "":
 		body = map[string]any{"context_uri": input.ContextURI}
+	}
+	if body != nil && input.OffsetURI != "" {
+		body["offset"] = map[string]any{"uri": input.OffsetURI}
 	}
 
 	path := "/me/player/play"
@@ -349,7 +357,13 @@ func (c *apiClient) play(ctx context.Context, accessToken string, input playInpu
 		path += "?device_id=" + url.QueryEscape(input.DeviceID)
 	}
 
-	resp, err := c.apiRequest(ctx, http.MethodPut, path, accessToken, body)
+	// Pass a genuinely nil body (not a nil map boxed in an interface) for the
+	// resume case, so apiRequest sends no request body at all.
+	var reqBody any
+	if body != nil {
+		reqBody = body
+	}
+	resp, err := c.apiRequest(ctx, http.MethodPut, path, accessToken, reqBody)
 	if err != nil {
 		return err
 	}

@@ -6,7 +6,7 @@ import type { Track } from "./types";
 const DEBOUNCE_MS = 350;
 
 export function SearchTab({ onPlayed }: { onPlayed: () => void }) {
-  const { playTrack } = useSpotifyPlayer();
+  const { playTracks } = useSpotifyPlayer();
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<Track[]>([]);
   const [loading, setLoading] = useState(false);
@@ -48,7 +48,12 @@ export function SearchTab({ onPlayed }: { onPlayed: () => void }) {
               key={t.id}
               type="button"
               onClick={() => {
-                playTrack(t.uri);
+                // Queue every result from the clicked one down, so playback
+                // rolls on to the next track instead of stopping after this one.
+                playTracks(
+                  results.map((r) => r.uri),
+                  t.uri,
+                );
                 onPlayed();
               }}
               className="flex items-center gap-2 rounded-md px-1 py-1.5 text-left hover:bg-(--card-alt)"

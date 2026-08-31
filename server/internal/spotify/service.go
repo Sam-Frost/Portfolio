@@ -152,6 +152,21 @@ func (s *Service) PlayTrack(ctx context.Context, uri, deviceID string) error {
 	return s.client.play(ctx, token, playInput{URIs: []string{uri}, DeviceID: deviceID})
 }
 
+// PlayTracks plays an explicit list of tracks as a queue (used by search
+// results — the clicked track plus the rest of the results), starting at
+// offsetURI when set, so playback continues to the next result instead of
+// stopping once one track ends. See PlayTrack for deviceID.
+func (s *Service) PlayTracks(ctx context.Context, uris []string, offsetURI, deviceID string) error {
+	if len(uris) == 0 {
+		return apperr.InvalidInput("uris is required")
+	}
+	token, err := s.validAccessToken(ctx)
+	if err != nil {
+		return err
+	}
+	return s.client.play(ctx, token, playInput{URIs: uris, OffsetURI: offsetURI, DeviceID: deviceID})
+}
+
 // Resume resumes whatever was last playing, without changing what's queued.
 // See PlayTrack for deviceID.
 func (s *Service) Resume(ctx context.Context, deviceID string) error {
@@ -239,11 +254,13 @@ func (s *Service) PlaylistTracks(ctx context.Context, playlistID string) ([]Trac
 	return s.client.playlistTracks(ctx, token, playlistID)
 }
 
-// PlayPlaylist plays a playlist from the top. Liked Songs has no context
-// URI in Spotify's API, so it's resolved to an explicit list of track URIs
-// instead of a context — everything else plays by context_uri. See
-// PlayTrack for deviceID.
-func (s *Service) PlayPlaylist(ctx context.Context, playlistID, deviceID string) error {
+// PlayPlaylist plays a playlist, starting at offsetURI when set (a track
+// clicked in the playlist view) or from the top otherwise. Either way the
+// whole playlist stays queued, so it keeps playing after that track ends.
+// Liked Songs has no context URI in Spotify's API, so it's resolved to an
+// explicit list of track URIs instead of a context — everything else plays
+// by context_uri. See PlayTrack for deviceID.
+func (s *Service) PlayPlaylist(ctx context.Context, playlistID, offsetURI, deviceID string) error {
 	if strings.TrimSpace(playlistID) == "" {
 		return apperr.InvalidInput("playlist id is required")
 	}
@@ -264,10 +281,14 @@ func (s *Service) PlayPlaylist(ctx context.Context, playlistID, deviceID string)
 		for _, t := range tracks {
 			uris = append(uris, t.URI)
 		}
-		return s.client.play(ctx, token, playInput{URIs: uris, DeviceID: deviceID})
+		return s.client.play(ctx, token, playInput{URIs: uris, OffsetURI: offsetURI, DeviceID: deviceID})
 	}
 
-	return s.client.play(ctx, token, playInput{ContextURI: "spotify:playlist:" + playlistID, DeviceID: deviceID})
+	return s.client.play(ctx, token, playInput{
+		ContextURI: "spotify:playlist:" + playlistID,
+		OffsetURI:  offsetURI,
+		DeviceID:   deviceID,
+	})
 }
 
 // signState/verifyState implement the OAuth "state" parameter as an

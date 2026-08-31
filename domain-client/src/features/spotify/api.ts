@@ -30,11 +30,18 @@ export function transferDevice(deviceId: string): Promise<void> {
   return apiRequest("/api/spotify/transfer", { method: "POST", body: JSON.stringify({ deviceId }) });
 }
 
+// Plays uris as a queue, starting at offsetUri, so playback continues to the
+// next track instead of stopping when a single one ends. Used for search
+// results (the clicked track plus everything below it).
+//
 // deviceId targets a specific device directly — pass it (typically the SDK's
 // own device id for this tab) when no device is currently active, since
 // Spotify otherwise rejects /play with no device to start on.
-export function playTrack(uri: string, deviceId?: string): Promise<void> {
-  return apiRequest("/api/spotify/play", { method: "POST", body: JSON.stringify({ uri, deviceId }) });
+export function playTracks(uris: string[], offsetUri: string, deviceId?: string): Promise<void> {
+  return apiRequest("/api/spotify/play", {
+    method: "POST",
+    body: JSON.stringify({ uris, offsetUri, deviceId }),
+  });
 }
 
 export function resume(deviceId?: string): Promise<void> {
@@ -73,9 +80,11 @@ export function fetchPlaylistTracks(playlistId: string): Promise<Track[]> {
   return apiRequest(`/api/spotify/playlists/${playlistId}/tracks`);
 }
 
-export function playPlaylist(playlistId: string, deviceId?: string): Promise<void> {
+// offsetUri, when given, starts the playlist at that track (one clicked in
+// the playlist view) while keeping the rest of the playlist queued.
+export function playPlaylist(playlistId: string, offsetUri?: string, deviceId?: string): Promise<void> {
   return apiRequest(`/api/spotify/playlists/${playlistId}/play`, {
     method: "POST",
-    body: JSON.stringify({ deviceId }),
+    body: JSON.stringify({ offsetUri, deviceId }),
   });
 }

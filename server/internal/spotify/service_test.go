@@ -178,11 +178,14 @@ func TestService_PlayPlaylist_LikedSongsUsesExplicitTrackURIs(t *testing.T) {
 	}
 	svc := NewService(repo, client, []byte("secret"))
 
-	if err := svc.PlayPlaylist(context.Background(), likedSongsID, "device-1"); err != nil {
+	if err := svc.PlayPlaylist(context.Background(), likedSongsID, "spotify:track:2", "device-1"); err != nil {
 		t.Fatalf("PlayPlaylist: %v", err)
 	}
 	if len(client.playedInput.URIs) != 2 || client.playedInput.ContextURI != "" {
 		t.Errorf("playedInput = %+v, want two explicit URIs and no context", client.playedInput)
+	}
+	if client.playedInput.OffsetURI != "spotify:track:2" {
+		t.Errorf("playedInput.OffsetURI = %q, want %q", client.playedInput.OffsetURI, "spotify:track:2")
 	}
 	if client.playedInput.DeviceID != "device-1" {
 		t.Errorf("playedInput.DeviceID = %q, want %q", client.playedInput.DeviceID, "device-1")
@@ -196,16 +199,23 @@ func TestService_PlayPlaylist_LikedSongsEmptyIsInvalidInput(t *testing.T) {
 	}
 	svc := NewService(repo, client, []byte("secret"))
 
-	err := svc.PlayPlaylist(context.Background(), likedSongsID, "")
+	err := svc.PlayPlaylist(context.Background(), likedSongsID, "", "")
 	assertInvalidInput(t, err)
 }
 
 func TestService_PlayPlaylist_RegularPlaylistUsesContextURI(t *testing.T) {
 	repo := connectedRepo("access", time.Now().Add(time.Hour))
-	svc := NewService(repo, &fakeClient{}, []byte("secret"))
+	client := &fakeClient{}
+	svc := NewService(repo, client, []byte("secret"))
 
-	if err := svc.PlayPlaylist(context.Background(), "abc123", ""); err != nil {
+	if err := svc.PlayPlaylist(context.Background(), "abc123", "spotify:track:9", ""); err != nil {
 		t.Fatalf("PlayPlaylist: %v", err)
+	}
+	if client.playedInput.ContextURI != "spotify:playlist:abc123" || len(client.playedInput.URIs) != 0 {
+		t.Errorf("playedInput = %+v, want playlist context and no explicit URIs", client.playedInput)
+	}
+	if client.playedInput.OffsetURI != "spotify:track:9" {
+		t.Errorf("playedInput.OffsetURI = %q, want %q", client.playedInput.OffsetURI, "spotify:track:9")
 	}
 }
 

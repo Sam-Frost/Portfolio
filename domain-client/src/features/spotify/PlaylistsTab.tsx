@@ -45,7 +45,7 @@ function PlaylistList({ onSelect }: { onSelect: (playlist: Playlist) => void }) 
 }
 
 function PlaylistTrackList({ playlist, onBack, onPlayed }: { playlist: Playlist; onBack: () => void; onPlayed: () => void }) {
-  const { playTrack } = useSpotifyPlayer();
+  const { playPlaylist } = useSpotifyPlayer();
   const [tracks, setTracks] = useState<Track[] | null>(null);
   const [error, setError] = useState(false);
 
@@ -77,7 +77,9 @@ function PlaylistTrackList({ playlist, onBack, onPlayed }: { playlist: Playlist;
               key={`${t.id}-${i}`}
               type="button"
               onClick={() => {
-                playTrack(t.uri);
+                // Start the whole playlist at this track so it keeps playing
+                // through the rest instead of stopping when the track ends.
+                playPlaylist(playlist.id, t.uri);
                 onPlayed();
               }}
               className="flex items-center gap-2 rounded-md px-1 py-1.5 text-left hover:bg-(--card-alt)"

@@ -132,15 +132,19 @@ func (h *Handler) transfer(w http.ResponseWriter, r *http.Request) {
 }
 
 type playRequest struct {
-	URI      string `json:"uri"`
-	DeviceID string `json:"deviceId"`
+	URI       string   `json:"uri"`
+	URIs      []string `json:"uris"`
+	OffsetURI string   `json:"offsetUri"`
+	DeviceID  string   `json:"deviceId"`
 }
 
-// play plays a specific track (uri set — e.g. a search result) or resumes
-// whatever was last playing (uri omitted — the collapsed widget's
-// play/pause button once state is already Paused). deviceId is optional —
-// the frontend sends its own Web Playback SDK device id whenever no device
-// is currently active, so playback has somewhere to start.
+// play starts a queue of tracks (uris set — e.g. search results, so
+// playback carries on to the next result), plays a single track (uri set),
+// or resumes whatever was last playing (neither set — the collapsed
+// widget's play/pause button once state is already Paused). offsetUri, with
+// uris, starts the queue at that track. deviceId is optional — the frontend
+// sends its own Web Playback SDK device id whenever no device is currently
+// active, so playback has somewhere to start.
 func (h *Handler) play(w http.ResponseWriter, r *http.Request) {
 	var input playRequest
 	if err := httpx.DecodeJSON(r, &input); err != nil {
@@ -149,9 +153,12 @@ func (h *Handler) play(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var err error
-	if input.URI != "" {
+	switch {
+	case len(input.URIs) > 0:
+		err = h.service.PlayTracks(r.Context(), input.URIs, input.OffsetURI, input.DeviceID)
+	case input.URI != "":
 		err = h.service.PlayTrack(r.Context(), input.URI, input.DeviceID)
-	} else {
+	default:
 		err = h.service.Resume(r.Context(), input.DeviceID)
 	}
 	if err != nil {
@@ -247,7 +254,9 @@ func (h *Handler) playlistTracks(w http.ResponseWriter, r *http.Request) {
 }
 
 // playPlaylist accepts the same optional deviceId body as play, for the
-// same reason (nothing active yet to target).
+// same reason (nothing active yet to target). offsetUri, when set, starts
+// the playlist at that track (one clicked in the playlist view) while
+// keeping the rest queued.
 func (h *Handler) playPlaylist(w http.ResponseWriter, r *http.Request) {
 	var input playRequest
 	if err := httpx.DecodeJSON(r, &input); err != nil {
@@ -255,7 +264,7 @@ func (h *Handler) playPlaylist(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.service.PlayPlaylist(r.Context(), r.PathValue("id"), input.DeviceID); err != nil {
+	if err := h.service.PlayPlaylist(r.Context(), r.PathValue("id"), input.OffsetURI, input.DeviceID); err != nil {
 		httpx.WriteError(w, err)
 		return
 	}
