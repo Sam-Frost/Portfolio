@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { Archive, ArchiveRestore, ArrowLeft, Lock, LockOpen, Star } from "lucide-react";
-import { fetchNote, updateNote } from "./api";
+import { Archive, ArchiveRestore, ArrowLeft, Lock, LockOpen, Star, Trash2 } from "lucide-react";
+import { deleteNote, fetchNote, updateNote } from "./api";
+import { DeleteNoteDialog } from "./DeleteNoteDialog";
 import { RichTextEditor } from "../../components/domain/RichTextEditor";
 import type { Note } from "./types";
 
@@ -24,6 +25,7 @@ export function NoteEditorPage() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [status, setStatus] = useState<SaveStatus>("saved");
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
 
   const pendingRef = useRef<{ title?: string; contentHtml?: string }>({});
   const timeoutRef = useRef<number | null>(null);
@@ -122,6 +124,21 @@ export function NoteEditorPage() {
       .catch(() => setNote((prev) => (prev ? { ...prev, archived: !nextArchived } : prev)));
   }
 
+  function handleDelete() {
+    if (!id) return;
+    // Drop any queued autosave so the unmount flush doesn't PATCH a note
+    // that's about to be (soft-)deleted.
+    if (timeoutRef.current) window.clearTimeout(timeoutRef.current);
+    timeoutRef.current = null;
+    pendingRef.current = {};
+    deleteNote(id)
+      .then(() => navigate("/notepad"))
+      .catch(() => {
+        setConfirmingDelete(false);
+        setStatus("error");
+      });
+  }
+
   if (loading) {
     return <div className="text-(--text-faint) text-[length:var(--text-caption)]">Loading note...</div>;
   }
@@ -191,8 +208,24 @@ export function NoteEditorPage() {
           >
             {note.archived ? <ArchiveRestore size={15} /> : <Archive size={15} />}
           </button>
+
+          <button
+            onClick={() => setConfirmingDelete(true)}
+            aria-label="Delete note"
+            className="text-(--text-faint) hover:text-(--label-red) transition-colors cursor-pointer"
+          >
+            <Trash2 size={15} />
+          </button>
         </div>
       </div>
+
+      {confirmingDelete && (
+        <DeleteNoteDialog
+          title={note.title}
+          onCancel={() => setConfirmingDelete(false)}
+          onConfirm={handleDelete}
+        />
+      )}
 
       <input
         value={title}

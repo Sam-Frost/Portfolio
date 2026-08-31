@@ -44,12 +44,12 @@ export const router = createBrowserRouter([
           {
             path: "upskill",
             element: <UpskillTopicsPage />,
-            handle: { title: "Upskill" },
+            handle: { title: "Upskill", fullWidth: true },
           },
           {
             path: "upskill/:topicId",
             element: <UpskillTopicPage />,
-            handle: { title: "Upskill" },
+            handle: { title: "Upskill", fullWidth: true },
           },
           {
             path: "hourly-tracker",

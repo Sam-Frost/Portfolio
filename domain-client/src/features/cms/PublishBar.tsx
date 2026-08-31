@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { UploadCloud } from "lucide-react";
 import { publish } from "./api";
+import { ConfirmDialog } from "../../components/domain/ConfirmDialog";
 import type { CmsStatus } from "./types";
 
 const SECTION_LABELS: Record<string, string> = {
@@ -27,10 +28,11 @@ interface Props {
 
 export function PublishBar({ status, onPublished }: Props) {
   const [publishing, setPublishing] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
   async function doPublish() {
-    if (!window.confirm("Publish all current content to the live site?")) return;
+    setConfirmOpen(false);
     setPublishing(true);
     setMessage(null);
     try {
@@ -76,7 +78,7 @@ export function PublishBar({ status, onPublished }: Props) {
 
       <button
         type="button"
-        onClick={doPublish}
+        onClick={() => setConfirmOpen(true)}
         disabled={publishing}
         className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[length:var(--text-pill)] ${
           publishing
@@ -89,6 +91,17 @@ export function PublishBar({ status, onPublished }: Props) {
         <UploadCloud size={13} />
         {publishing ? "Publishing…" : "Publish"}
       </button>
+
+      {confirmOpen && (
+        <ConfirmDialog
+          title="Publish to the live site?"
+          body="This pushes all current content — every section — live at sat0ru.dev."
+          confirmLabel="Publish"
+          tone="neutral"
+          onCancel={() => setConfirmOpen(false)}
+          onConfirm={doPublish}
+        />
+      )}
     </div>
   );
 }

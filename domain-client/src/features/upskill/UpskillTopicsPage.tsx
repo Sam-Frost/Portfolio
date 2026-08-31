@@ -5,6 +5,9 @@ import { AddTopicForm } from "./AddTopicForm";
 import { TopicCard } from "./TopicCard";
 import type { Topic } from "./types";
 
+// Oldest first, by the date each topic was added.
+const byDateAdded = (a: Topic, b: Topic) => a.dateAdded.localeCompare(b.dateAdded);
+
 export function UpskillTopicsPage() {
   const [topics, setTopics] = useState<Topic[]>([]);
   const [loading, setLoading] = useState(true);
@@ -12,14 +15,14 @@ export function UpskillTopicsPage() {
 
   useEffect(() => {
     fetchTopics()
-      .then(setTopics)
+      .then((fetched) => setTopics([...fetched].sort(byDateAdded)))
       .catch((err) => setError(err instanceof Error ? err.message : "Couldn't load topics."))
       .finally(() => setLoading(false));
   }, []);
 
   function handleCreate(input: { name: string; targetDate: string | null }) {
     createTopic(input)
-      .then((topic) => setTopics((prev) => [topic, ...prev]))
+      .then((topic) => setTopics((prev) => [...prev, topic].sort(byDateAdded)))
       .catch((err) => setError(err instanceof Error ? err.message : "Couldn't add topic."));
   }
 

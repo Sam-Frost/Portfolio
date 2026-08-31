@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Plus } from "lucide-react";
 import { createExperience, deleteExperience, fetchExperiences, updateExperience } from "./api";
+import { ConfirmDialog } from "../../components/domain/ConfirmDialog";
 import { ErrorBanner } from "./components";
 import { ItemRow } from "./ItemRow";
 import { ExperienceFormDialog } from "./ExperienceFormDialog";
@@ -13,6 +14,7 @@ export function ExperienceTab({ onChanged }: { onChanged: () => void }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [dialog, setDialog] = useState<DialogState>(null);
+  const [pendingDelete, setPendingDelete] = useState<CmsExperience | null>(null);
 
   useEffect(() => {
     fetchExperiences()
@@ -56,10 +58,13 @@ export function ExperienceTab({ onChanged }: { onChanged: () => void }) {
       .catch(reload);
   }
 
-  function remove(e: CmsExperience) {
-    if (!window.confirm(`Delete "${e.position} · ${e.company}"? This can't be undone.`)) return;
+  async function confirmDelete() {
+    const e = pendingDelete;
+    if (!e) return;
+    await deleteExperience(e.id);
     setItems((prev) => prev.filter((x) => x.id !== e.id));
-    deleteExperience(e.id).then(onChanged).catch(reload);
+    setPendingDelete(null);
+    onChanged();
   }
 
   return (
@@ -92,7 +97,7 @@ export function ExperienceTab({ onChanged }: { onChanged: () => void }) {
               onMoveDown={() => move(i, 1)}
               onToggleVisible={(v) => toggleVisible(e, v)}
               onEdit={() => setDialog({ mode: "edit", experience: e })}
-              onDelete={() => remove(e)}
+              onDelete={() => setPendingDelete(e)}
             />
           ))}
         </div>
@@ -104,6 +109,22 @@ export function ExperienceTab({ onChanged }: { onChanged: () => void }) {
           initial={dialog.experience}
           onClose={() => setDialog(null)}
           onSubmit={(input) => handleEdit(dialog.experience.id, input)}
+        />
+      )}
+
+      {pendingDelete && (
+        <ConfirmDialog
+          title="Delete experience?"
+          body={
+            <>
+              <strong className="text-(--fg)">
+                {pendingDelete.position} · {pendingDelete.company}
+              </strong>{" "}
+              will be removed. This can't be undone.
+            </>
+          }
+          onCancel={() => setPendingDelete(null)}
+          onConfirm={confirmDelete}
         />
       )}
     </div>

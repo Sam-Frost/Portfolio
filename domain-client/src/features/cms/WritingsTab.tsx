@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Plus } from "lucide-react";
 import { createBlog, deleteBlog, fetchBlogs, updateBlog } from "./api";
+import { ConfirmDialog } from "../../components/domain/ConfirmDialog";
 import { ErrorBanner } from "./components";
 import { ItemRow } from "./ItemRow";
 import { BlogFormDialog } from "./BlogFormDialog";
@@ -13,6 +14,7 @@ export function WritingsTab({ onChanged }: { onChanged: () => void }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [dialog, setDialog] = useState<DialogState>(null);
+  const [pendingDelete, setPendingDelete] = useState<CmsBlog | null>(null);
 
   useEffect(() => {
     fetchBlogs()
@@ -56,10 +58,13 @@ export function WritingsTab({ onChanged }: { onChanged: () => void }) {
       .catch(reload);
   }
 
-  function remove(b: CmsBlog) {
-    if (!window.confirm(`Delete "${b.title}"? This can't be undone.`)) return;
+  async function confirmDelete() {
+    const b = pendingDelete;
+    if (!b) return;
+    await deleteBlog(b.id);
     setItems((prev) => prev.filter((x) => x.id !== b.id));
-    deleteBlog(b.id).then(onChanged).catch(reload);
+    setPendingDelete(null);
+    onChanged();
   }
 
   return (
@@ -92,7 +97,7 @@ export function WritingsTab({ onChanged }: { onChanged: () => void }) {
               onMoveDown={() => move(i, 1)}
               onToggleVisible={(v) => toggleVisible(b, v)}
               onEdit={() => setDialog({ mode: "edit", blog: b })}
-              onDelete={() => remove(b)}
+              onDelete={() => setPendingDelete(b)}
             />
           ))}
         </div>
@@ -104,6 +109,19 @@ export function WritingsTab({ onChanged }: { onChanged: () => void }) {
           initial={dialog.blog}
           onClose={() => setDialog(null)}
           onSubmit={(input) => handleEdit(dialog.blog.id, input)}
+        />
+      )}
+
+      {pendingDelete && (
+        <ConfirmDialog
+          title="Delete post?"
+          body={
+            <>
+              <strong className="text-(--fg)">{pendingDelete.title}</strong> will be removed. This can't be undone.
+            </>
+          }
+          onCancel={() => setPendingDelete(null)}
+          onConfirm={confirmDelete}
         />
       )}
     </div>

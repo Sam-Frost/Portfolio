@@ -14,7 +14,7 @@ import {
 } from "./api";
 import { fetchDocumentLabels } from "./labelApi";
 import { Breadcrumb } from "./Breadcrumb";
-import { ConfirmDialog } from "./ConfirmDialog";
+import { ConfirmDialog } from "../../components/domain/ConfirmDialog";
 import { DocumentRow } from "./DocumentRow";
 import { FolderRow } from "./FolderRow";
 import { MoveDialog } from "./MoveDialog";

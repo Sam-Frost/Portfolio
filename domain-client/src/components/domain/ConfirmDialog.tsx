@@ -4,13 +4,27 @@ interface ConfirmDialogProps {
   title: string;
   body: ReactNode;
   confirmLabel?: string;
+  // "danger" (default) is the red destructive button used by every delete
+  // confirm; "neutral" is the plain --fg button for non-destructive
+  // confirms like CMS "Publish".
+  tone?: "danger" | "neutral";
   onCancel: () => void;
   onConfirm: () => Promise<void> | void;
 }
 
-// Destructive-action confirm modal, shared by "delete document" and
-// "delete folder" (which passes a cascade warning as `body`).
-export function ConfirmDialog({ title, body, confirmLabel = "Delete", onCancel, onConfirm }: ConfirmDialogProps) {
+// Shared confirm modal for destructive / irreversible actions — the in-app
+// replacement for window.confirm across the domain area (delete document,
+// delete folder, CMS deletes, CMS publish). Runs onConfirm, keeping the
+// dialog up with a spinner-free "busy" state until it settles, and shows
+// the thrown message inline if it rejects.
+export function ConfirmDialog({
+  title,
+  body,
+  confirmLabel = "Delete",
+  tone = "danger",
+  onCancel,
+  onConfirm,
+}: ConfirmDialogProps) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -29,6 +43,9 @@ export function ConfirmDialog({ title, body, confirmLabel = "Delete", onCancel, 
   function handleKeyDown(e: KeyboardEvent<HTMLDivElement>) {
     if (e.key === "Escape") onCancel();
   }
+
+  const confirmClass =
+    tone === "neutral" ? "bg-(--fg) text-(--bg)" : "bg-(--label-red) text-(--bg)";
 
   return (
     <div
@@ -61,7 +78,7 @@ export function ConfirmDialog({ title, body, confirmLabel = "Delete", onCancel, 
             type="button"
             disabled={busy}
             onClick={confirm}
-            className="rounded-md bg-(--label-red) text-(--bg) px-2.5 py-1 text-[length:var(--text-pill)] cursor-pointer disabled:opacity-50"
+            className={`rounded-md px-2.5 py-1 text-[length:var(--text-pill)] cursor-pointer disabled:opacity-50 ${confirmClass}`}
           >
             {confirmLabel}
           </button>

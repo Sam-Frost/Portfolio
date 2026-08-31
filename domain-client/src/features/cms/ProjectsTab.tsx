@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Plus } from "lucide-react";
 import { createProject, deleteProject, fetchProjects, updateProject } from "./api";
+import { ConfirmDialog } from "../../components/domain/ConfirmDialog";
 import { ErrorBanner } from "./components";
 import { ItemRow } from "./ItemRow";
 import { ProjectFormDialog } from "./ProjectFormDialog";
@@ -13,6 +14,7 @@ export function ProjectsTab({ onChanged }: { onChanged: () => void }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [dialog, setDialog] = useState<DialogState>(null);
+  const [pendingDelete, setPendingDelete] = useState<CmsProject | null>(null);
 
   useEffect(() => {
     fetchProjects()
@@ -56,10 +58,13 @@ export function ProjectsTab({ onChanged }: { onChanged: () => void }) {
       .catch(reload);
   }
 
-  function remove(p: CmsProject) {
-    if (!window.confirm(`Delete "${p.title}"? This can't be undone.`)) return;
+  async function confirmDelete() {
+    const p = pendingDelete;
+    if (!p) return;
+    await deleteProject(p.id);
     setProjects((prev) => prev.filter((x) => x.id !== p.id));
-    deleteProject(p.id).then(onChanged).catch(reload);
+    setPendingDelete(null);
+    onChanged();
   }
 
   return (
@@ -92,7 +97,7 @@ export function ProjectsTab({ onChanged }: { onChanged: () => void }) {
               onMoveDown={() => move(i, 1)}
               onToggleVisible={(v) => toggleVisible(p, v)}
               onEdit={() => setDialog({ mode: "edit", project: p })}
-              onDelete={() => remove(p)}
+              onDelete={() => setPendingDelete(p)}
             />
           ))}
         </div>
@@ -106,6 +111,19 @@ export function ProjectsTab({ onChanged }: { onChanged: () => void }) {
           initial={dialog.project}
           onClose={() => setDialog(null)}
           onSubmit={(input) => handleEdit(dialog.project.id, input)}
+        />
+      )}
+
+      {pendingDelete && (
+        <ConfirmDialog
+          title="Delete project?"
+          body={
+            <>
+              <strong className="text-(--fg)">{pendingDelete.title}</strong> will be removed. This can't be undone.
+            </>
+          }
+          onCancel={() => setPendingDelete(null)}
+          onConfirm={confirmDelete}
         />
       )}
     </div>

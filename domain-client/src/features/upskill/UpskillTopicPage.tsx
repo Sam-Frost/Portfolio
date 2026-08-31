@@ -20,6 +20,9 @@ function formatDate(value: string) {
   return new Date(value).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
 }
 
+// Oldest first, by the date each subtopic was added.
+const byDateAdded = (a: Subtopic, b: Subtopic) => a.dateAdded.localeCompare(b.dateAdded);
+
 export function UpskillTopicPage() {
   const { topicId } = useParams<{ topicId: string }>();
   const navigate = useNavigate();
@@ -34,7 +37,7 @@ export function UpskillTopicPage() {
     Promise.all([fetchTopic(topicId), fetchSubtopics(topicId)])
       .then(([fetchedTopic, fetchedSubtopics]) => {
         setTopic(fetchedTopic);
-        setSubtopics(fetchedSubtopics);
+        setSubtopics([...fetchedSubtopics].sort(byDateAdded));
       })
       .catch((err) => {
         if (err instanceof ApiError && err.status === 404) {
@@ -50,7 +53,7 @@ export function UpskillTopicPage() {
     if (!topicId) return;
     createSubtopic(topicId, input)
       .then((subtopic) => {
-        setSubtopics((prev) => [subtopic, ...prev]);
+        setSubtopics((prev) => [...prev, subtopic].sort(byDateAdded));
         setTopic((prev) => (prev ? { ...prev, subtopicCount: prev.subtopicCount + 1 } : prev));
       })
       .catch((err) => setError(err instanceof Error ? err.message : "Couldn't add subtopic."));
@@ -142,12 +145,6 @@ export function UpskillTopicPage() {
           </div>
         </div>
 
-        <div className="bg-(--card) border-(--line) border-[0.5px] border-solid rounded-xl px-4 py-3 mb-4">
-          <UpskillPieChart done={topic.doneCount} total={topic.subtopicCount} />
-        </div>
-
-        <AddSubtopicForm onAdd={handleCreateSubtopic} />
-
         {error && (
           <div className="mb-3 flex items-center justify-between gap-2 rounded-lg border-(--line) border-[0.5px] border-solid bg-(--card) px-3 py-2 text-[length:var(--text-pill)] text-red-400">
             <span>{error}</span>
@@ -162,28 +159,38 @@ export function UpskillTopicPage() {
         )}
       </div>
 
-      <div className="flex-1 min-h-0 overflow-y-auto themed-scrollbar">
-        {subtopics.length === 0 && (
-          <div className="bg-(--card) border-(--line) border-[0.5px] border-solid rounded-xl p-8 text-center text-(--text-faint) text-[length:var(--text-caption)]">
-            No subtopics yet. Add one above.
-          </div>
-        )}
+      <div className="flex-1 min-h-0 flex gap-4">
+        <div className="flex-1 min-w-0 overflow-y-auto themed-scrollbar">
+          {subtopics.length === 0 && (
+            <div className="bg-(--card) border-(--line) border-[0.5px] border-solid rounded-xl p-8 text-center text-(--text-faint) text-[length:var(--text-caption)]">
+              No subtopics yet. Add one on the right.
+            </div>
+          )}
 
-        {subtopics.length > 0 && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-1.5 pb-2">
-            {subtopics.map((subtopic) => (
-              <SubtopicItem
-                key={subtopic.id}
-                subtopic={subtopic}
-                onMarkDone={handleMarkDone}
-                onUpdate={handleUpdateSubtopic}
-                onDelete={handleDeleteSubtopic}
-                onAddResource={handleAddResource}
-                onRemoveResource={handleRemoveResource}
-              />
-            ))}
+          {subtopics.length > 0 && (
+            <div className="grid grid-cols-1 gap-1.5 pb-2">
+              {subtopics.map((subtopic) => (
+                <SubtopicItem
+                  key={subtopic.id}
+                  subtopic={subtopic}
+                  onMarkDone={handleMarkDone}
+                  onUpdate={handleUpdateSubtopic}
+                  onDelete={handleDeleteSubtopic}
+                  onAddResource={handleAddResource}
+                  onRemoveResource={handleRemoveResource}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="shrink-0 w-80 flex flex-col overflow-y-auto themed-scrollbar">
+          <AddSubtopicForm onAdd={handleCreateSubtopic} />
+
+          <div className="bg-(--card) border-(--line) border-[0.5px] border-solid rounded-xl px-4 py-3">
+            <UpskillPieChart done={topic.doneCount} total={topic.subtopicCount} />
           </div>
-        )}
+        </div>
       </div>
     </div>
   );

@@ -37,7 +37,7 @@ export function DailyHoursChart({ summaries, monthLabel }: DailyHoursChartProps)
           No sessions logged this month yet.
         </p>
       ) : (
-        <div className="flex items-end gap-[3px] h-32">
+        <div className="flex items-end gap-[3px] h-32 mb-4">
           {summaries.map((s) => {
             const totalPct = s.workedMinutes > 0 ? Math.max(4, (s.workedMinutes / max) * 100) : 0;
             // Each segment's height as a share of the (already scaled) bar,
@@ -57,7 +57,15 @@ export function DailyHoursChart({ summaries, monthLabel }: DailyHoursChartProps)
                     <div className="w-full bg-(--gold)" style={{ height: `${proPct}%` }} />
                   </div>
                 )}
-                {day % 5 === 0 && <span className="mt-1 text-[9px] leading-none text-(--text-faint)">{day}</span>}
+                {/* Absolutely positioned so the day labels sit *below* the
+                    baseline without stealing height from the bar's flex
+                    column — otherwise every 5th day's bar (and only those)
+                    gets pushed up off the shared baseline. */}
+                {day % 5 === 0 && (
+                  <span className="pointer-events-none absolute top-full mt-1 left-1/2 -translate-x-1/2 text-[9px] leading-none text-(--text-faint)">
+                    {day}
+                  </span>
+                )}
                 <span className="pointer-events-none absolute bottom-full mb-1.5 left-1/2 -translate-x-1/2 z-10 whitespace-nowrap rounded-md border-(--line) border-[0.5px] border-solid bg-(--card-alt) px-2 py-1 text-[length:var(--text-pill)] text-(--text-muted) opacity-0 shadow-lg transition-opacity duration-150 group-hover:opacity-100">
                   <span className="block text-(--fg)">{s.date}: {formatMinutes(s.workedMinutes)}</span>
                   {s.professionalMinutes > 0 && (
