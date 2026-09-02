@@ -8,6 +8,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jackc/pgx/v5/pgconn"
+
 	"github.com/Sam-Frost/portfolio/internal/apperr"
 	"github.com/Sam-Frost/portfolio/internal/id"
 )
@@ -34,7 +36,7 @@ func (r *PostgresRepository) List(ctx context.Context, filter ListFilter) ([]Not
 	// Pinned notes float to the top of the working set; within each group,
 	// newest first. Archived notes are never pinned (archiving clears the
 	// pin) so `pinned DESC` is a no-op for the archive view.
-	const q = `SELECT id, title, pinned, (archived_at IS NOT NULL) AS archived, locked, created_at, updated_at
+	const q = `SELECT id, title, pinned, (archived_at IS NOT NULL) AS archived, locked, label_id, created_at, updated_at
 		FROM notes
 		WHERE deleted_at IS NULL AND NOT scratch AND (archived_at IS NOT NULL) = $1
 		ORDER BY pinned DESC, created_at DESC`
@@ -48,7 +50,7 @@ func (r *PostgresRepository) List(ctx context.Context, filter ListFilter) ([]Not
 	summaries := make([]NoteSummary, 0)
 	for rows.Next() {
 		var s NoteSummary
-		if err := rows.Scan(&s.ID, &s.Title, &s.Pinned, &s.Archived, &s.Locked, &s.CreatedAt, &s.UpdatedAt); err != nil {
+		if err := rows.Scan(&s.ID, &s.Title, &s.Pinned, &s.Archived, &s.Locked, &s.LabelID, &s.CreatedAt, &s.UpdatedAt); err != nil {
 			return nil, apperr.Internal("failed to scan note")
 		}
 		summaries = append(summaries, s)
@@ -89,11 +91,11 @@ func (r *PostgresRepository) Scratch(ctx context.Context) (Note, error) {
 }
 
 func (r *PostgresRepository) selectScratch(ctx context.Context) (Note, error) {
-	const q = `SELECT id, title, content_html, pinned, (archived_at IS NOT NULL) AS archived, locked, created_at, updated_at
+	const q = `SELECT id, title, content_html, pinned, (archived_at IS NOT NULL) AS archived, locked, label_id, created_at, updated_at
 		FROM notes WHERE scratch AND deleted_at IS NULL`
 
 	var n Note
-	err := r.db.QueryRowContext(ctx, q).Scan(&n.ID, &n.Title, &n.ContentHTML, &n.Pinned, &n.Archived, &n.Locked, &n.CreatedAt, &n.UpdatedAt)
+	err := r.db.QueryRowContext(ctx, q).Scan(&n.ID, &n.Title, &n.ContentHTML, &n.Pinned, &n.Archived, &n.Locked, &n.LabelID, &n.CreatedAt, &n.UpdatedAt)
 	if err != nil {
 		return Note{}, err
 	}
@@ -102,11 +104,11 @@ func (r *PostgresRepository) selectScratch(ctx context.Context) (Note, error) {
 }
 
 func (r *PostgresRepository) Get(ctx context.Context, noteID string) (Note, error) {
-	const q = `SELECT id, title, content_html, pinned, (archived_at IS NOT NULL) AS archived, locked, created_at, updated_at
+	const q = `SELECT id, title, content_html, pinned, (archived_at IS NOT NULL) AS archived, locked, label_id, created_at, updated_at
 		FROM notes WHERE id = $1 AND deleted_at IS NULL`
 
 	var n Note
-	err := r.db.QueryRowContext(ctx, q, noteID).Scan(&n.ID, &n.Title, &n.ContentHTML, &n.Pinned, &n.Archived, &n.Locked, &n.CreatedAt, &n.UpdatedAt)
+	err := r.db.QueryRowContext(ctx, q, noteID).Scan(&n.ID, &n.Title, &n.ContentHTML, &n.Pinned, &n.Archived, &n.Locked, &n.LabelID, &n.CreatedAt, &n.UpdatedAt)
 	if errors.Is(err, sql.ErrNoRows) {
 		return Note{}, apperr.NotFound("note not found")
 	}
@@ -152,6 +154,15 @@ func (r *PostgresRepository) Update(ctx context.Context, noteID string, input Up
 			sets = append(sets, "archived_at = NULL")
 		}
 	}
+	if input.LabelID != nil {
+		sets = append(sets, fmt.Sprintf("label_id = $%d", argN))
+		if *input.LabelID == "" {
+			args = append(args, nil)
+		} else {
+			args = append(args, *input.LabelID)
+		}
+		argN++
+	}
 
 	if len(sets) == 0 {
 		return r.Get(ctx, noteID)
@@ -164,14 +175,17 @@ func (r *PostgresRepository) Update(ctx context.Context, noteID string, input Up
 	args = append(args, noteID)
 	q := fmt.Sprintf(
 		"UPDATE notes SET %s WHERE id = $%d AND deleted_at IS NULL "+
-			"RETURNING id, title, content_html, pinned, (archived_at IS NOT NULL) AS archived, locked, created_at, updated_at",
+			"RETURNING id, title, content_html, pinned, (archived_at IS NOT NULL) AS archived, locked, label_id, created_at, updated_at",
 		strings.Join(sets, ", "), argN,
 	)
 
 	var n Note
-	err := r.db.QueryRowContext(ctx, q, args...).Scan(&n.ID, &n.Title, &n.ContentHTML, &n.Pinned, &n.Archived, &n.Locked, &n.CreatedAt, &n.UpdatedAt)
+	err := r.db.QueryRowContext(ctx, q, args...).Scan(&n.ID, &n.Title, &n.ContentHTML, &n.Pinned, &n.Archived, &n.Locked, &n.LabelID, &n.CreatedAt, &n.UpdatedAt)
 	if errors.Is(err, sql.ErrNoRows) {
 		return Note{}, apperr.NotFound("note not found")
+	}
+	if isForeignKeyViolation(err) {
+		return Note{}, apperr.InvalidInput("label not found")
 	}
 	if err != nil {
 		return Note{}, apperr.Internal("failed to update note")
@@ -197,4 +211,12 @@ func (r *PostgresRepository) Delete(ctx context.Context, noteID string) error {
 		return apperr.NotFound("note not found")
 	}
 	return nil
+}
+
+// isForeignKeyViolation reports whether err is a Postgres foreign-key
+// violation (SQLSTATE 23503) — notes.label_id references notepad_labels.id,
+// so this is how an unknown label surfaces as a 400 instead of a raw 500.
+func isForeignKeyViolation(err error) bool {
+	var pgErr *pgconn.PgError
+	return errors.As(err, &pgErr) && pgErr.Code == "23503"
 }

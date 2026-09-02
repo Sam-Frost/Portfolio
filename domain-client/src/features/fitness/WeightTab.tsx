@@ -54,13 +54,20 @@ function ProgressBox({
           style={{ width: `${pct}%` }}
         />
         <div
-          className="absolute top-1/2 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-1.5 transition-[left] duration-500 ease-out"
+          className="absolute top-1/2 -translate-y-1/2 transition-[left] duration-500 ease-out"
           style={{ left: `${pct}%` }}
         >
-          <span className="-mt-0.5 whitespace-nowrap rounded-md bg-(--green) px-1.5 py-0.5 text-[length:var(--text-pill)] font-medium text-(--bg)">
+          {/* The pill is shifted by a fraction of *its own* width equal to
+              pct, so at 0% it sits flush-right of the cursor and at 100%
+              flush-left — it never pokes past either end of the track (and
+              the fitness tab's overflow-x-hidden would otherwise clip it). */}
+          <span
+            className="absolute bottom-full left-0 mb-1.5 whitespace-nowrap rounded-md bg-(--green) px-1.5 py-0.5 text-[length:var(--text-pill)] font-medium text-(--bg)"
+            style={{ transform: `translateX(-${pct}%)` }}
+          >
             {lost != null && lost > 0 ? `${lost} kg lost` : "0 kg lost"}
           </span>
-          <span className="size-3 rounded-full border-2 border-(--card) bg-(--green)" />
+          <span className="absolute top-1/2 size-3 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-(--card) bg-(--green)" />
         </div>
       </div>
 

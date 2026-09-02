@@ -12,6 +12,7 @@ type Note struct {
 	Pinned      bool      `json:"pinned"`
 	Archived    bool      `json:"archived"`
 	Locked      bool      `json:"locked"`
+	LabelID     *string   `json:"labelId"`
 	CreatedAt   time.Time `json:"createdAt"`
 	UpdatedAt   time.Time `json:"updatedAt"`
 
@@ -27,6 +28,7 @@ type NoteSummary struct {
 	Pinned    bool      `json:"pinned"`
 	Archived  bool      `json:"archived"`
 	Locked    bool      `json:"locked"`
+	LabelID   *string   `json:"labelId"`
 	CreatedAt time.Time `json:"createdAt"`
 	UpdatedAt time.Time `json:"updatedAt"`
 }
@@ -48,13 +50,15 @@ type CreateInput struct {
 
 // UpdateInput is a partial update: nil fields are left unchanged, matching
 // the todo/label packages' UpdateInput convention. Autosave sends whichever
-// of Title/ContentHTML actually changed.
+// of Title/ContentHTML actually changed. As with todo.UpdateInput.LabelID, an
+// empty-string LabelID means "clear it" rather than "leave unchanged".
 type UpdateInput struct {
 	Title       *string `json:"title"`
 	ContentHTML *string `json:"contentHtml"`
 	Pinned      *bool   `json:"pinned"`
 	Archived    *bool   `json:"archived"`
 	Locked      *bool   `json:"locked"`
+	LabelID     *string `json:"labelId"`
 }
 
 func updatedAtNow() time.Time { return time.Now().UTC() }

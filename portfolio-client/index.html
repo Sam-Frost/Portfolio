@@ -4,6 +4,9 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/jpeg" href="/src/assets/images/gojo.jpg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- Pin the mobile browser chrome (iOS status-bar / Android toolbar) to the
+         app's dark background so the safe-area doesn't render white. -->
+    <meta name="theme-color" content="#0E0E0E" />
     <!-- Published site content (CMS). Preloaded so the fetch overlaps the JS
          bundle download; falls back to compiled-in defaults if unavailable. -->
     <link rel="preload" href="/content.json" as="fetch" crossorigin="anonymous" />

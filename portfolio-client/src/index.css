@@ -54,6 +54,12 @@
   font-style: normal;
 }
 
+html,
+body {
+  background-color: var(--bg);
+  color-scheme: dark;
+}
+
 body {
   font-family: var(--font-sans);
   color: var(--fg);

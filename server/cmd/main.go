@@ -16,14 +16,17 @@ import (
 	_ "time/tzdata" // embeds the IANA zoneinfo DB so time.LoadLocation("Asia/Kolkata") (internal/diary) works even on a host/image without a system tzdata package (e.g. the alpine runtime image)
 
 	"github.com/Sam-Frost/portfolio/internal/auth"
+	"github.com/Sam-Frost/portfolio/internal/blobstore"
 	"github.com/Sam-Frost/portfolio/internal/cms"
 	"github.com/Sam-Frost/portfolio/internal/db"
 	"github.com/Sam-Frost/portfolio/internal/diary"
 	"github.com/Sam-Frost/portfolio/internal/document"
 	"github.com/Sam-Frost/portfolio/internal/documentlabel"
+	"github.com/Sam-Frost/portfolio/internal/drawingboard"
 	"github.com/Sam-Frost/portfolio/internal/fitness"
 	"github.com/Sam-Frost/portfolio/internal/label"
 	"github.com/Sam-Frost/portfolio/internal/notepad"
+	"github.com/Sam-Frost/portfolio/internal/notepadlabel"
 	"github.com/Sam-Frost/portfolio/internal/reqlog"
 	"github.com/Sam-Frost/portfolio/internal/settings"
 	"github.com/Sam-Frost/portfolio/internal/spotify"
@@ -47,6 +50,11 @@ func withCORS(allowedOrigin string, next http.Handler) http.Handler {
 		// to the bucket and is governed by the bucket's own CORS config.
 		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		// ETag is exposed so the browser can read each multipart-upload
+		// part's ETag off the PUT response (diary video log, local-disk
+		// blob store). The S3 store's PUTs go straight to the bucket, whose
+		// own CORS config must expose ETag too.
+		w.Header().Set("Access-Control-Expose-Headers", "ETag")
 		if r.Method == http.MethodOptions {
 			w.WriteHeader(http.StatusNoContent)
 			return
@@ -73,7 +81,9 @@ func withAuth(authService *auth.Service, next http.Handler) http.Handler {
 		// The local document blob store's upload/download URLs carry their
 		// own HMAC signature (verified in document.ServeBlob), so they're
 		// reached by a browser with no bearer token, like the OAuth callback.
-		if publicPaths[r.URL.Path] || strings.HasPrefix(r.URL.Path, "/api/document-blob/") {
+		if publicPaths[r.URL.Path] ||
+			strings.HasPrefix(r.URL.Path, "/api/document-blob/") ||
+			strings.HasPrefix(r.URL.Path, "/api/blob/") {
 			next.ServeHTTP(w, r)
 			return
 		}
@@ -89,6 +99,8 @@ func newRouter(
 	labelRepo label.Repository,
 	settingsRepo settings.Repository,
 	notepadRepo notepad.Repository,
+	notepadLabelRepo notepadlabel.Repository,
+	drawingBoardRepo drawingboard.Repository,
 	upskillRepo upskill.Repository,
 	diaryRepo diary.Repository,
 	fitnessRepo fitness.Repository,
@@ -99,6 +111,8 @@ func newRouter(
 	documentRepo document.Repository,
 	documentLabelRepo documentlabel.Repository,
 	documentBlob document.BlobStore,
+	diaryVideoRepo diary.VideoRepository,
+	diaryVideoBlob blobstore.Store,
 	spotifyClientID, spotifyClientSecret, spotifyRedirectURI, spotifyFrontendURL, jwtSecret string,
 ) *http.ServeMux {
 	mux := http.NewServeMux()
@@ -118,11 +132,23 @@ func newRouter(
 	notepadService := notepad.NewService(notepadRepo)
 	notepad.NewHandler(notepadService).Register(mux)
 
+	notepadLabelService := notepadlabel.NewService(notepadLabelRepo)
+	notepadlabel.NewHandler(notepadLabelService).Register(mux)
+
+	drawingBoardService := drawingboard.NewService(drawingBoardRepo)
+	drawingboard.NewHandler(drawingBoardService).Register(mux)
+
 	upskillService := upskill.NewService(upskillRepo)
 	upskill.NewHandler(upskillService).Register(mux)
 
 	diaryService := diary.NewService(diaryRepo)
 	diary.NewHandler(diaryService).Register(mux)
+
+	diaryVideoService := diary.NewVideoService(diaryVideoRepo, diaryVideoBlob)
+	diary.NewVideoHandler(diaryVideoService).Register(mux)
+	if local, ok := diaryVideoBlob.(blobstore.LocalServer); ok {
+		mux.HandleFunc(local.RoutePrefix(), local.ServeBlob)
+	}
 
 	fitnessService := fitness.NewService(fitnessRepo)
 	fitness.NewHandler(fitnessService).Register(mux)
@@ -232,6 +258,42 @@ func newDocumentBlobStore(ctx context.Context, jwtSecret string) document.BlobSt
 	return store
 }
 
+// newDiaryVideoBlobStore builds the store the diary video log keeps clip
+// bytes in. It reuses the Document Storage S3 bucket (same AWS creds / IAM)
+// under a separate key prefix; without DOCUMENTS_S3_BUCKET it's the same
+// local-disk fallback as documents, so dev and the no-AWS deployment work
+// unchanged. Clips upload via a multipart upload (see internal/blobstore).
+//
+//	DOCUMENTS_S3_BUCKET       bucket for clip objects (enables S3 mode; shared with documents)
+//	DIARY_VIDEO_S3_PREFIX     key prefix in that bucket (default "diary-videos")
+//	DIARY_VIDEO_LOCAL_DIR     on-disk root when S3 is not configured (default "./.data/diary-videos")
+//	PUBLIC_API_URL            this server's external base URL, for local-store signed URLs
+func newDiaryVideoBlobStore(ctx context.Context, jwtSecret string) blobstore.Store {
+	bucket := os.Getenv("DOCUMENTS_S3_BUCKET")
+	if bucket == "" {
+		dir := envOr("DIARY_VIDEO_LOCAL_DIR", "./.data/diary-videos")
+		publicURL := envOr("PUBLIC_API_URL", "http://localhost:8080")
+		store, err := blobstore.NewLocal(dir, []byte(jwtSecret), publicURL)
+		if err != nil {
+			log.Fatalf("diary video local blob store init failed: %v", err)
+		}
+		log.Printf("DOCUMENTS_S3_BUCKET not set — diary videos using local disk blob store at %s", dir)
+		return store
+	}
+
+	prefix := envOr("DIARY_VIDEO_S3_PREFIX", "diary-videos")
+	store, err := blobstore.NewS3(ctx, blobstore.S3Config{
+		Bucket: bucket,
+		Prefix: prefix,
+		Region: os.Getenv("AWS_REGION"),
+	})
+	if err != nil {
+		log.Fatalf("diary video S3 blob store init failed: %v", err)
+	}
+	log.Printf("diary video storage enabled → s3://%s/%s", bucket, prefix)
+	return store
+}
+
 func main() {
 	reqlog.Init()
 
@@ -277,8 +339,11 @@ func main() {
 	labelRepo := label.NewPostgresRepository(sqlDB)
 	settingsRepo := settings.NewPostgresRepository(sqlDB)
 	notepadRepo := notepad.NewPostgresRepository(sqlDB)
+	notepadLabelRepo := notepadlabel.NewPostgresRepository(sqlDB)
+	drawingBoardRepo := drawingboard.NewPostgresRepository(sqlDB)
 	upskillRepo := upskill.NewPostgresRepository(sqlDB)
 	diaryRepo := diary.NewPostgresRepository(sqlDB)
+	diaryVideoRepo := diary.NewPostgresVideoRepository(sqlDB)
 	fitnessRepo := fitness.NewPostgresRepository(sqlDB)
 	spotifyRepo := spotify.NewPostgresRepository(sqlDB, spotifyCipher)
 	workSessionRepo := worksession.NewPostgresRepository(sqlDB)
@@ -287,11 +352,13 @@ func main() {
 	documentRepo := document.NewPostgresRepository(sqlDB)
 	documentLabelRepo := documentlabel.NewPostgresRepository(sqlDB)
 	documentBlob := newDocumentBlobStore(context.Background(), jwtSecret)
+	diaryVideoBlob := newDiaryVideoBlobStore(context.Background(), jwtSecret)
 
 	router := newRouter(
-		authService, todoRepo, labelRepo, settingsRepo, notepadRepo, upskillRepo, diaryRepo,
+		authService, todoRepo, labelRepo, settingsRepo, notepadRepo, notepadLabelRepo, drawingBoardRepo, upskillRepo, diaryRepo,
 		fitnessRepo, spotifyRepo, workSessionRepo, cmsRepo, cmsPublisher,
 		documentRepo, documentLabelRepo, documentBlob,
+		diaryVideoRepo, diaryVideoBlob,
 		spotifyClientID, spotifyClientSecret, spotifyRedirectURI, spotifyFrontendURL, jwtSecret,
 	)
 

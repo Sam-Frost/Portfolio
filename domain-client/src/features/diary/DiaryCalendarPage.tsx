@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ChevronLeft, ChevronRight, CalendarDays } from "lucide-react";
 import { fetchDiaryDates } from "./api";
+import { fetchVideoDateCounts } from "./video/videoApi";
 import { CalendarGrid } from "./CalendarGrid";
 import { todayIST } from "./dateUtils";
 
@@ -31,14 +32,19 @@ export function DiaryCalendarPage() {
   const [month, setMonth] = useState(viewMonth0); // 0-11
 
   const [entryDates, setEntryDates] = useState<Set<string>>(new Set());
+  const [videoDates, setVideoDates] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const { from, to } = monthRange(year, month);
     setLoading(true);
-    fetchDiaryDates(from, to)
-      .then((dates) => setEntryDates(new Set(dates)))
+    // A day can be marked by a written entry, a video log, or both.
+    Promise.all([fetchDiaryDates(from, to), fetchVideoDateCounts(from, to)])
+      .then(([dates, videoCounts]) => {
+        setEntryDates(new Set(dates));
+        setVideoDates(new Set(Object.keys(videoCounts)));
+      })
       .catch((err) => setError(err instanceof Error ? err.message : "Couldn't load diary entries."))
       .finally(() => setLoading(false));
   }, [year, month]);
@@ -110,6 +116,7 @@ export function DiaryCalendarPage() {
           year={year}
           month={month}
           entryDates={entryDates}
+          videoDates={videoDates}
           todayDate={today}
           loading={loading}
           onSelectDate={(date) => navigate(`/diary/${date}`)}

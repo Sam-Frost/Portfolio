@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { fetchSettings, updateSettings } from "./api";
 import { LabelsSection } from "./LabelsSection";
 import { DocumentLabelsSection } from "./DocumentLabelsSection";
+import { NotepadLabelsSection } from "./NotepadLabelsSection";
 import { FoodLibrarySection } from "./FoodLibrarySection";
 import type { Settings, TimeLeftFormat } from "./types";
 
@@ -88,6 +89,13 @@ export function SettingsPage() {
           <section className="bg-(--card) border-(--line) border-[0.5px] border-solid rounded-xl p-5">
             <h2 className="text-sm font-space font-medium text-(--fg) mb-3">Documents — Labels</h2>
             <DocumentLabelsSection />
+          </section>
+
+          {/* Notepad has its own label set (server/internal/notepadlabel),
+              managed here just like the todo labels above. */}
+          <section className="bg-(--card) border-(--line) border-[0.5px] border-solid rounded-xl p-5">
+            <h2 className="text-sm font-space font-medium text-(--fg) mb-3">Notepad — Labels</h2>
+            <NotepadLabelsSection />
           </section>
 
           {/* The fitness food library has its own /api/fitness/foods CRUD and

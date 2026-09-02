@@ -28,7 +28,15 @@ export function createNote(title?: string): Promise<Note> {
 // title/contentHtml just changed.
 export function updateNote(
   id: string,
-  patch: { title?: string; contentHtml?: string; pinned?: boolean; archived?: boolean; locked?: boolean },
+  patch: {
+    title?: string;
+    contentHtml?: string;
+    pinned?: boolean;
+    archived?: boolean;
+    locked?: boolean;
+    // "" clears the label, matching the backend's UpdateInput convention.
+    labelId?: string;
+  },
 ): Promise<Note> {
   return apiRequest<Note>(`/api/notes/${id}`, {
     method: "PATCH",

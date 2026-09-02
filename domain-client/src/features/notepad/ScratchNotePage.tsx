@@ -108,7 +108,7 @@ export function ScratchNotePage() {
 
       <span className="shrink-0 mb-3 text-xl font-space font-semibold text-(--text-faint)">Random Notepad</span>
 
-      <RichTextEditor key={note.id} initialContentHtml={note.contentHtml} onChange={handleContentChange} />
+      <RichTextEditor key={note.id} initialContentHtml={note.contentHtml} onChange={handleContentChange} allowDiagrams />
     </div>
   );
 }

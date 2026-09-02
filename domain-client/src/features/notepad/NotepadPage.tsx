@@ -1,11 +1,30 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Archive, ArchiveRestore, Lock, LockOpen, NotebookPen, Plus, Search, Star, Trash2 } from "lucide-react";
+import {
+  Archive,
+  ArchiveRestore,
+  Lock,
+  LockOpen,
+  NotebookPen,
+  Plus,
+  Search,
+  Star,
+  Tag,
+  TagX,
+  Trash2,
+} from "lucide-react";
 import { createNote, deleteNote, fetchNotes, updateNote } from "./api";
+import { fetchNoteLabels } from "./labelApi";
 import { DeleteNoteDialog } from "./DeleteNoteDialog";
-import type { NoteSummary } from "./types";
+import { LABEL_COLOR_VAR } from "../labels/colors";
+import type { NoteLabel, NoteSummary } from "./types";
 
 type View = "active" | "archive";
+
+// Sentinel labelFilter value for "notes with no label assigned", distinct
+// from null (no filter, i.e. "All labels"). Real label ids are 32-char hex
+// (see internal/id.New on the backend), so this can never collide.
+const NO_LABEL_FILTER = "none";
 
 function formatDate(value: string) {
   return new Date(value).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
@@ -21,6 +40,10 @@ export function NotepadPage() {
   const [pendingDelete, setPendingDelete] = useState<NoteSummary | null>(null);
   const [search, setSearch] = useState("");
   const [pinnedOnly, setPinnedOnly] = useState(false);
+  const [labels, setLabels] = useState<NoteLabel[]>([]);
+  const [labelFilter, setLabelFilter] = useState<string | null>(null);
+  const [showLabelMenu, setShowLabelMenu] = useState(false);
+  const labelMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setLoading(true);
@@ -31,12 +54,40 @@ export function NotepadPage() {
       .finally(() => setLoading(false));
   }, [view]);
 
+  useEffect(() => {
+    fetchNoteLabels()
+      .then(setLabels)
+      .catch((err) => setError(err instanceof Error ? err.message : "Couldn't load labels."));
+  }, []);
+
+  useEffect(() => {
+    if (!showLabelMenu) return;
+
+    function handlePointerDown(e: MouseEvent) {
+      if (labelMenuRef.current && !labelMenuRef.current.contains(e.target as Node)) {
+        setShowLabelMenu(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handlePointerDown);
+    return () => document.removeEventListener("mousedown", handlePointerDown);
+  }, [showLabelMenu]);
+
+  function selectLabelFilter(next: string | null) {
+    setLabelFilter(next);
+    setShowLabelMenu(false);
+  }
+
   const query = search.trim().toLowerCase();
   const visibleNotes = notes.filter((n) => {
     if (query && !n.title.toLowerCase().includes(query)) return false;
     if (view === "active" && pinnedOnly && !n.pinned) return false;
+    if (labelFilter === NO_LABEL_FILTER && n.labelId !== null) return false;
+    if (labelFilter && labelFilter !== NO_LABEL_FILTER && n.labelId !== labelFilter) return false;
     return true;
   });
+  const activeLabel = labelFilter && labelFilter !== NO_LABEL_FILTER ? labels.find((l) => l.id === labelFilter) ?? null : null;
+  const isNoLabelFilter = labelFilter === NO_LABEL_FILTER;
 
   function handleCreate() {
     setCreating(true);
@@ -154,6 +205,84 @@ export function NotepadPage() {
             Pinned only
           </button>
         )}
+
+        <div className="relative" ref={labelMenuRef}>
+          <button
+            onClick={() => setShowLabelMenu((v) => !v)}
+            aria-label="Filter by label"
+            className={`flex items-center gap-1.5 rounded-lg border-[0.5px] border-solid px-3 py-1.5 text-[length:var(--text-caption)] transition-colors cursor-pointer ${
+              showLabelMenu || activeLabel || isNoLabelFilter
+                ? "border-(--line-strong) text-(--fg)"
+                : "border-(--line) text-(--text-muted) hover:text-(--fg)"
+            }`}
+          >
+            {activeLabel ? (
+              <>
+                <span
+                  className="size-2 rounded-full shrink-0"
+                  style={{ backgroundColor: LABEL_COLOR_VAR[activeLabel.color] }}
+                />
+                {activeLabel.name}
+              </>
+            ) : isNoLabelFilter ? (
+              <>
+                <TagX size={13} />
+                No label
+              </>
+            ) : (
+              <>
+                <Tag size={13} />
+                Label
+              </>
+            )}
+          </button>
+
+          {showLabelMenu && (
+            <div className="absolute right-0 z-10 mt-2 w-52 max-h-56 overflow-y-auto rounded-lg border-(--line) border-[0.5px] border-solid bg-(--card) p-1.5 shadow-lg themed-scrollbar">
+              <button
+                onClick={() => selectLabelFilter(null)}
+                className={`flex w-full items-center rounded-lg px-3 py-1.5 text-left text-[length:var(--text-pill)] transition-colors cursor-pointer ${
+                  !labelFilter
+                    ? "bg-(--card-alt) text-(--fg)"
+                    : "text-(--text-muted) hover:text-(--fg) hover:bg-(--card-alt)"
+                }`}
+              >
+                All labels
+              </button>
+              <button
+                onClick={() => selectLabelFilter(NO_LABEL_FILTER)}
+                className={`flex w-full items-center gap-1.5 rounded-lg px-3 py-1.5 text-left text-[length:var(--text-pill)] transition-colors cursor-pointer ${
+                  isNoLabelFilter
+                    ? "bg-(--card-alt) text-(--fg)"
+                    : "text-(--text-muted) hover:text-(--fg) hover:bg-(--card-alt)"
+                }`}
+              >
+                <TagX size={12} className="shrink-0" />
+                <span className="truncate flex-1">No label</span>
+              </button>
+              {labels.map((l) => (
+                <button
+                  key={l.id}
+                  onClick={() => selectLabelFilter(l.id)}
+                  className={`flex w-full items-center gap-1.5 rounded-lg px-3 py-1.5 text-left text-[length:var(--text-pill)] transition-colors cursor-pointer ${
+                    labelFilter === l.id
+                      ? "bg-(--card-alt) text-(--fg)"
+                      : "text-(--text-muted) hover:text-(--fg) hover:bg-(--card-alt)"
+                  }`}
+                >
+                  <span
+                    className="size-2 rounded-full shrink-0"
+                    style={{ backgroundColor: LABEL_COLOR_VAR[l.color] }}
+                  />
+                  <span className="truncate flex-1">{l.name}</span>
+                </button>
+              ))}
+              {labels.length === 0 && (
+                <p className="px-3 py-1.5 text-[length:var(--text-pill)] text-(--text-faint)">No labels yet.</p>
+              )}
+            </div>
+          )}
+        </div>
       </div>
 
       {error && (
@@ -184,7 +313,9 @@ export function NotepadPage() {
 
         {!loading && visibleNotes.length > 0 && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 pb-2">
-            {visibleNotes.map((note) => (
+            {visibleNotes.map((note) => {
+              const noteLabel = labels.find((l) => l.id === note.labelId) ?? null;
+              return (
               <div
                 key={note.id}
                 onClick={() => navigate(`/notepad/${note.id}`)}
@@ -197,7 +328,18 @@ export function NotepadPage() {
                   {note.locked && <Lock size={12} className="shrink-0 text-(--label-orange)" />}
                   <span className="truncate">{note.title}</span>
                 </span>
-                <span className="text-[length:var(--text-pill)] text-(--text-faint)">{formatDate(note.createdAt)}</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-[length:var(--text-pill)] text-(--text-faint)">{formatDate(note.createdAt)}</span>
+                  {noteLabel && (
+                    <span className="flex items-center gap-1 min-w-0 max-w-24 rounded-md bg-(--card-alt) px-1.5 py-0.5 text-[length:var(--text-pill)] text-(--text-muted)">
+                      <span
+                        className="size-1.5 rounded-full shrink-0"
+                        style={{ backgroundColor: LABEL_COLOR_VAR[noteLabel.color] }}
+                      />
+                      <span className="truncate">{noteLabel.name}</span>
+                    </span>
+                  )}
+                </div>
 
                 <div className="absolute top-2 right-2 flex items-center gap-1.5 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
                   {view === "active" && (
@@ -252,7 +394,8 @@ export function NotepadPage() {
                   </button>
                 </div>
               </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

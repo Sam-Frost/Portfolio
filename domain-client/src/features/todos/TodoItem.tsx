@@ -31,11 +31,11 @@ export function TodoItem({ todo, labels, onMarkDone, onUndo, onUpdate }: TodoIte
   return (
     <div
       onDoubleClick={() => setEditing(true)}
-      className="group relative flex items-start gap-2 bg-(--card) border-(--line) border-[0.5px] border-solid rounded-lg px-3 py-1.5"
+      className="group relative flex flex-col gap-1.5 sm:flex-row sm:items-start sm:gap-2 bg-(--card) border-(--line) border-[0.5px] border-solid rounded-lg px-3 py-2 sm:py-1.5"
     >
       <div className="flex-1 min-w-0">
         <span
-          className={`block truncate text-[length:var(--text-pill)] ${
+          className={`block text-[length:var(--text-caption)] sm:text-[length:var(--text-pill)] sm:truncate ${
             todo.done ? "text-(--text-faint) line-through" : "text-(--fg)"
           }`}
         >
@@ -46,39 +46,45 @@ export function TodoItem({ todo, labels, onMarkDone, onUndo, onUpdate }: TodoIte
         </span>
       </div>
 
-      {label && (
-        <span className="flex items-center gap-1 shrink-0 max-w-24 rounded-md bg-(--card-alt) border-(--line) border-[0.5px] border-solid px-1.5 py-0.5 text-[length:var(--text-pill)] text-(--text-muted)">
-          <span className="size-1.5 rounded-full shrink-0" style={{ backgroundColor: LABEL_COLOR_VAR[label.color] }} />
-          <span className="truncate">{label.name}</span>
-        </span>
-      )}
-
-      {todo.done ? (
-        <span className="flex items-center gap-1 shrink-0">
-          <span className="flex items-center gap-1 text-[length:var(--text-pill)] text-(--green)">
-            <Check size={12} strokeWidth={3} />
-            Done
-            {todo.completedAt && (
-              <span className="text-(--text-faint)">· {formatDateShort(todo.completedAt)}</span>
-            )}
+      {/* On mobile this is a full-width row beneath the name, its contents
+          (label + action) grouped at the left edge under the title;
+          `sm:contents` dissolves it on desktop so the label and the Done
+          control sit inline at the end of the title row as before. */}
+      <div className="flex items-center gap-2 shrink-0 sm:contents">
+        {label && (
+          <span className="flex items-center gap-1 shrink-0 max-w-40 sm:max-w-24 rounded-md bg-(--card-alt) border-(--line) border-[0.5px] border-solid px-1.5 py-0.5 text-[length:var(--text-pill)] text-(--text-muted)">
+            <span className="size-1.5 rounded-full shrink-0" style={{ backgroundColor: LABEL_COLOR_VAR[label.color] }} />
+            <span className="truncate">{label.name}</span>
           </span>
+        )}
+
+        {todo.done ? (
+          <span className="flex items-center gap-1 shrink-0 sm:ml-auto">
+            <span className="flex items-center gap-1 text-[length:var(--text-pill)] text-(--green)">
+              <Check size={12} strokeWidth={3} />
+              Done
+              {todo.completedAt && (
+                <span className="text-(--text-faint)">· {formatDateShort(todo.completedAt)}</span>
+              )}
+            </span>
+            <button
+              onClick={() => onUndo(todo.id)}
+              aria-label="Undo completion"
+              title="Mark as not done"
+              className="flex items-center justify-center size-6 sm:size-5 rounded-md text-(--text-faint) hover:text-(--fg) hover:bg-(--card-alt) transition-colors cursor-pointer"
+            >
+              <Undo2 size={12} />
+            </button>
+          </span>
+        ) : (
           <button
-            onClick={() => onUndo(todo.id)}
-            aria-label="Undo completion"
-            title="Mark as not done"
-            className="flex items-center justify-center size-5 rounded-md text-(--text-faint) hover:text-(--fg) hover:bg-(--card-alt) transition-colors cursor-pointer"
+            onClick={() => onMarkDone(todo.id)}
+            className="shrink-0 sm:ml-auto rounded-md bg-(--card-alt) border-(--line) border-[0.5px] border-solid px-2.5 py-1 sm:px-2 sm:py-0.5 text-[length:var(--text-pill)] text-(--text-muted) hover:text-(--fg) hover:border-(--fg) transition-colors cursor-pointer"
           >
-            <Undo2 size={12} />
+            Done
           </button>
-        </span>
-      ) : (
-        <button
-          onClick={() => onMarkDone(todo.id)}
-          className="shrink-0 rounded-md bg-(--card-alt) border-(--line) border-[0.5px] border-solid px-2 py-0.5 text-[length:var(--text-pill)] text-(--text-muted) hover:text-(--fg) hover:border-(--fg) transition-colors cursor-pointer"
-        >
-          Done
-        </button>
-      )}
+        )}
+      </div>
 
       {/* Hovering anywhere on the card reveals this — delay-0 in the base
           state keeps mouse-leave hiding instant, group-hover:delay-1000

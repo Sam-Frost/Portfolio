@@ -218,12 +218,16 @@ export function TodosPage() {
                 </button>
               </div>
 
-              <div className="flex items-center gap-1.5">
-                <div className="relative" ref={labelMenuRef}>
+              {/* ml-auto keeps this group pinned to the right even after it
+                  wraps below the tabs on a narrow screen — otherwise the
+                  wrapped row starts at the left and the right-anchored label
+                  menu below opens off the left edge of the viewport. */}
+              <div className="flex items-center gap-1.5 ml-auto">
+                <div className="relative min-w-0" ref={labelMenuRef}>
                   <button
                     onClick={() => setShowLabelMenu((v) => !v)}
                     aria-label="Filter by label"
-                    className={`flex items-center gap-1.5 h-7 rounded-lg px-2 text-[length:var(--text-pill)] transition-colors cursor-pointer ${
+                    className={`flex items-center gap-1.5 h-7 max-w-[45vw] sm:max-w-none rounded-lg px-2 text-[length:var(--text-pill)] transition-colors cursor-pointer ${
                       showLabelMenu || activeLabel || isNoLabelFilter
                         ? "bg-(--card-alt) text-(--fg)"
                         : "text-(--text-muted) hover:text-(--fg) hover:bg-(--card-alt)"
@@ -235,7 +239,7 @@ export function TodosPage() {
                           className="size-2 rounded-full shrink-0"
                           style={{ backgroundColor: LABEL_COLOR_VAR[activeLabel.color] }}
                         />
-                        {activeLabel.name}
+                        <span className="truncate">{activeLabel.name}</span>
                       </>
                     ) : isNoLabelFilter ? (
                       <>

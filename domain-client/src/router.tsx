@@ -1,4 +1,4 @@
-import { createBrowserRouter } from "react-router-dom";
+import { createBrowserRouter, createMemoryRouter, type RouteObject } from "react-router-dom";
 
 import { DomainExpansionPage } from "./pages/DomainExpansionPage";
 import { DomainErrorPage } from "./pages/DomainErrorPage";
@@ -11,6 +11,8 @@ import { SettingsPage } from "./features/settings/SettingsPage";
 import { NotepadPage } from "./features/notepad/NotepadPage";
 import { NoteEditorPage } from "./features/notepad/NoteEditorPage";
 import { ScratchNotePage } from "./features/notepad/ScratchNotePage";
+import { DrawingBoardListPage } from "./features/drawingboard/DrawingBoardListPage";
+import { DrawingBoardEditorPage } from "./features/drawingboard/DrawingBoardEditorPage";
 import { UpskillTopicsPage } from "./features/upskill/UpskillTopicsPage";
 import { UpskillTopicPage } from "./features/upskill/UpskillTopicPage";
 import { DiaryCalendarPage } from "./features/diary/DiaryCalendarPage";
@@ -22,7 +24,7 @@ import { ExerciseDetailPage } from "./features/fitness/ExerciseDetailPage";
 import { DocumentsPage } from "./features/documents/DocumentsPage";
 import { CmsPage } from "./features/cms/CmsPage";
 
-export const router = createBrowserRouter([
+const routes: RouteObject[] = [
   {
     path: "/",
     element: <DomainExpansionPage />,
@@ -78,6 +80,16 @@ export const router = createBrowserRouter([
             handle: { title: "Notepad" },
           },
           {
+            path: "drawing-board",
+            element: <DrawingBoardListPage />,
+            handle: { title: "Drawing Board" },
+          },
+          {
+            path: "drawing-board/:id",
+            element: <DrawingBoardEditorPage />,
+            handle: { title: "Drawing Board", fullWidth: true },
+          },
+          {
             path: "diary",
             element: <DiaryCalendarPage />,
             handle: { title: "Personal Diary" },
@@ -114,4 +126,32 @@ export const router = createBrowserRouter([
   // Unmatched URL — outside RequireAuth so a bad link doesn't force a login
   // redirect before showing the 404.
   { path: "*", element: <NotFoundPage /> },
-]);
+];
+
+// When the site is launched as an installed app — an iOS home-screen bookmark
+// or any PWA in standalone display mode — route entirely in memory so the
+// address the OS remembers for the app never changes (iOS treats a
+// standalone bookmark whose URL stays put as its own "app"). In a normal
+// browser tab we keep real URL routing, so shared deep links like
+// /notepad/<uuid> and /diary/:date still work and are bookmarkable.
+//
+// The choice is made once, at load: the first entry is seeded from the real
+// URL so a standalone launch still honours whatever path it opened at, then
+// every in-app navigation (including the :id / :date routes) stays silent.
+function isStandaloneLaunch(): boolean {
+  if (typeof window === "undefined") return false;
+  const iosStandalone =
+    (window.navigator as Navigator & { standalone?: boolean }).standalone === true;
+  const displayModeStandalone =
+    window.matchMedia?.("(display-mode: standalone)").matches ?? false;
+  return iosStandalone || displayModeStandalone;
+}
+
+export const router = isStandaloneLaunch()
+  ? createMemoryRouter(routes, {
+      initialEntries: [
+        window.location.pathname + window.location.search + window.location.hash,
+      ],
+      initialIndex: 0,
+    })
+  : createBrowserRouter(routes);

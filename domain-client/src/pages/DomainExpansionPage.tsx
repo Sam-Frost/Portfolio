@@ -1,14 +1,21 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Navigate, useNavigate } from "react-router-dom";
 import Button from "../components/Button";
 import { login } from "../features/auth/api";
-import { markJustLoggedIn, setToken } from "../features/auth/token";
+import { getToken, markJustLoggedIn, setToken } from "../features/auth/token";
 
 export function DomainExpansionPage() {
   const navigate = useNavigate();
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+
+  // Already authenticated (token persisted from a prior session) — skip the
+  // password screen. Matters most for a standalone/home-screen launch, which
+  // always cold-opens at "/": it should come up already inside the app.
+  if (getToken()) {
+    return <Navigate to="/todos" replace />;
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

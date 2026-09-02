@@ -5,6 +5,7 @@ import { fetchDiaryEntry, upsertDiaryEntry } from "./api";
 import { RichTextEditor } from "../../components/domain/RichTextEditor";
 import { ApiError } from "../../lib/apiClient";
 import { isDiaryDateLocked } from "./dateUtils";
+import { VideoLogSection } from "./video/VideoLogSection";
 import type { DiaryEntry } from "./types";
 
 type SaveStatus = "saved" | "saving" | "error";
@@ -165,6 +166,8 @@ export function DiaryEntryPage() {
       ) : (
         <RichTextEditor key={date} initialContentHtml={entry?.content ?? ""} onChange={handleContentChange} readOnly={locked} />
       )}
+
+      <VideoLogSection date={date} locked={locked} />
     </div>
   );
 }

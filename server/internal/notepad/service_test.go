@@ -246,6 +246,58 @@ func TestService_LockedNoteRejectsContentEditsUntilUnlocked(t *testing.T) {
 	}
 }
 
+func TestService_UpdateAssignsAndClearsLabel(t *testing.T) {
+	svc := NewService(NewMemoryRepository())
+
+	n, err := svc.Create(context.Background(), CreateInput{})
+	if err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+
+	labelID := "label-123"
+	assigned, err := svc.Update(context.Background(), n.ID, UpdateInput{LabelID: &labelID})
+	if err != nil {
+		t.Fatalf("Update assign: %v", err)
+	}
+	if assigned.LabelID == nil || *assigned.LabelID != "label-123" {
+		t.Fatalf("LabelID = %v, want %q", assigned.LabelID, "label-123")
+	}
+
+	empty := ""
+	cleared, err := svc.Update(context.Background(), n.ID, UpdateInput{LabelID: &empty})
+	if err != nil {
+		t.Fatalf("Update clear: %v", err)
+	}
+	if cleared.LabelID != nil {
+		t.Fatalf("LabelID = %v, want nil after clear", *cleared.LabelID)
+	}
+}
+
+func TestService_LockedNoteStillAcceptsLabelChange(t *testing.T) {
+	svc := NewService(NewMemoryRepository())
+
+	n, err := svc.Create(context.Background(), CreateInput{})
+	if err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+
+	locked := true
+	if _, err := svc.Update(context.Background(), n.ID, UpdateInput{Locked: &locked}); err != nil {
+		t.Fatalf("Update lock: %v", err)
+	}
+
+	// Labeling is list bookkeeping, not content — allowed on a locked note,
+	// like pin/archive.
+	labelID := "label-123"
+	updated, err := svc.Update(context.Background(), n.ID, UpdateInput{LabelID: &labelID})
+	if err != nil {
+		t.Fatalf("labeling a locked note: %v", err)
+	}
+	if updated.LabelID == nil || *updated.LabelID != "label-123" {
+		t.Fatalf("LabelID = %v, want %q", updated.LabelID, "label-123")
+	}
+}
+
 func TestService_ListSortsPinnedFirst(t *testing.T) {
 	svc := NewService(NewMemoryRepository())
 

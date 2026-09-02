@@ -22,5 +22,10 @@
     "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["src"]
+  "include": ["src"],
+  // Test files are typechecked by bun test's own transpiler (which strips
+  // types rather than checking them) — excluded here so the production
+  // build doesn't need "bun:test"'s ambient types wired into the app's
+  // tsconfig.
+  "exclude": ["src/**/*.test.ts", "src/**/*.test.tsx"]
 }

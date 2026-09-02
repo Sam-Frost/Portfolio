@@ -2,9 +2,11 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Archive, ArchiveRestore, ArrowLeft, Lock, LockOpen, Star, Trash2 } from "lucide-react";
 import { deleteNote, fetchNote, updateNote } from "./api";
+import { fetchNoteLabels } from "./labelApi";
 import { DeleteNoteDialog } from "./DeleteNoteDialog";
 import { RichTextEditor } from "../../components/domain/RichTextEditor";
-import type { Note } from "./types";
+import { LabelPicker } from "../labels/LabelPicker";
+import type { NoteLabel, Note } from "./types";
 
 type SaveStatus = "saved" | "saving" | "error";
 
@@ -26,6 +28,7 @@ export function NoteEditorPage() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [status, setStatus] = useState<SaveStatus>("saved");
   const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [labels, setLabels] = useState<NoteLabel[]>([]);
 
   const pendingRef = useRef<{ title?: string; contentHtml?: string }>({});
   const timeoutRef = useRef<number | null>(null);
@@ -41,6 +44,12 @@ export function NoteEditorPage() {
       .catch((err) => setLoadError(err instanceof Error ? err.message : "Couldn't load note."))
       .finally(() => setLoading(false));
   }, [id]);
+
+  useEffect(() => {
+    fetchNoteLabels()
+      .then(setLabels)
+      .catch(() => {});
+  }, []);
 
   function flush() {
     if (timeoutRef.current) window.clearTimeout(timeoutRef.current);
@@ -116,6 +125,16 @@ export function NoteEditorPage() {
       });
   }
 
+  function handleLabelChange(labelId: string | null) {
+    if (!id || !note) return;
+    const previous = note.labelId;
+    setNote({ ...note, labelId });
+    updateNote(id, { labelId: labelId ?? "" }).catch(() => {
+      setNote((prev) => (prev ? { ...prev, labelId: previous } : prev));
+      setStatus("error");
+    });
+  }
+
   function handleToggleArchive() {
     if (!id || !note) return;
     const nextArchived = !note.archived;
@@ -179,6 +198,10 @@ export function NoteEditorPage() {
             )}
           </div>
 
+          {!locked && (
+            <LabelPicker labels={labels} selectedId={note.labelId} onChange={handleLabelChange} alwaysVisible />
+          )}
+
           <button
             onClick={handleToggleLock}
             aria-label={locked ? "Unlock note" : "Lock note"}
@@ -240,6 +263,7 @@ export function NoteEditorPage() {
         initialContentHtml={note.contentHtml}
         onChange={handleContentChange}
         readOnly={locked}
+        allowDiagrams
       />
     </div>
   );

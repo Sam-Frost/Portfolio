@@ -64,6 +64,12 @@
   font-style: normal;
 }
 
+html,
+body {
+  background-color: var(--bg);
+  color-scheme: dark;
+}
+
 body {
   font-family: var(--font-sans);
   color: var(--fg);
@@ -98,4 +104,15 @@ body {
 
 .themed-scrollbar::-webkit-scrollbar-thumb:hover {
   background-color: var(--text-faint);
+}
+
+/* Trim the Excalidraw chrome we don't want inside the notepad diagram
+   dialog (DiagramDialog.tsx): the top-left hamburger menu, the Library
+   panel trigger (top-right), and the help "?" button (bottom-right). The
+   dialog is a focused "draw a diagram to embed" surface, not a full
+   Excalidraw workspace. */
+.diagram-dialog__canvas .main-menu-trigger,
+.diagram-dialog__canvas .layer-ui__wrapper__top-right,
+.diagram-dialog__canvas .help-icon {
+  display: none !important;
 }

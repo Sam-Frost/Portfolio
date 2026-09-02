@@ -1,9 +1,11 @@
+import { Video } from "lucide-react";
 import { isDiaryDateLocked } from "./dateUtils";
 
 interface CalendarGridProps {
   year: number;
   month: number; // 0-11
   entryDates: Set<string>;
+  videoDates?: Set<string>; // days with at least one recorded clip
   todayDate: string; // "YYYY-MM-DD", IST
   loading?: boolean;
   onSelectDate: (date: string) => void;
@@ -18,7 +20,7 @@ function pad(n: number) {
 // A small, self-contained month grid — no shared calendar component exists
 // elsewhere in the codebase yet. Days with an existing entry render
 // distinctly from empty ones; today gets a ring so it's easy to find.
-export function CalendarGrid({ year, month, entryDates, todayDate, loading, onSelectDate }: CalendarGridProps) {
+export function CalendarGrid({ year, month, entryDates, videoDates, todayDate, loading, onSelectDate }: CalendarGridProps) {
   const firstOfMonth = new Date(year, month, 1);
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const leadingBlanks = firstOfMonth.getDay(); // 0 = Sunday
@@ -47,24 +49,33 @@ export function CalendarGrid({ year, month, entryDates, todayDate, loading, onSe
           if (!cell) return <div key={`blank-${i}`} />;
 
           const hasEntry = entryDates.has(cell.date);
+          const hasVideo = videoDates?.has(cell.date) ?? false;
+          const hasContent = hasEntry || hasVideo;
           const isToday = cell.date === todayDate;
           const locked = isDiaryDateLocked(cell.date);
+
+          const contentLabel = hasEntry && hasVideo ? "has an entry and a video" : hasEntry ? "has an entry" : hasVideo ? "has a video" : null;
 
           return (
             <button
               key={cell.date}
               type="button"
               onClick={() => onSelectDate(cell.date)}
-              aria-label={hasEntry ? `${cell.date}, has an entry` : cell.date}
+              aria-label={contentLabel ? `${cell.date}, ${contentLabel}` : cell.date}
               className={`relative aspect-square rounded-lg border-[0.5px] border-solid text-[length:var(--text-caption)] flex flex-col items-center justify-center gap-1 transition-colors cursor-pointer ${
-                hasEntry
+                hasContent
                   ? "bg-(--green-bg) border-(--green) text-(--green-fg) hover:border-(--green)"
                   : "bg-(--card) border-(--line) text-(--text-muted) hover:border-(--line-strong) hover:text-(--fg)"
               } ${isToday ? "ring-1 ring-(--gold) ring-offset-1 ring-offset-(--bg)" : ""}`}
             >
               <span>{cell.day}</span>
-              {hasEntry && <span className="size-1 rounded-full bg-(--green)" />}
-              {!hasEntry && locked && (
+              {hasContent && (
+                <span className="flex items-center gap-0.5">
+                  {hasEntry && <span className="size-1 rounded-full bg-(--green)" />}
+                  {hasVideo && <Video size={9} className="text-(--green)" />}
+                </span>
+              )}
+              {!hasContent && locked && (
                 <span className="absolute top-1.5 right-1.5 size-1 rounded-full bg-(--text-faint)" title="No entry — edit window closed" />
               )}
             </button>

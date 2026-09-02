@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/Sam-Frost/portfolio/internal/apperr"
+	"github.com/Sam-Frost/portfolio/internal/reqlog"
 )
 
 type Service struct {
@@ -78,9 +79,29 @@ func (s *Service) Update(ctx context.Context, id string, input UpdateInput) (Not
 		input.Title = &trimmed
 	}
 
-	return s.repo.Update(ctx, id, input)
+	note, err := s.repo.Update(ctx, id, input)
+	if err != nil {
+		return Note{}, err
+	}
+
+	// Title/body autosave is high-frequency and not worth a line each; a
+	// label change is a deliberate one-off worth recording.
+	if input.LabelID != nil {
+		logger := reqlog.FromContext(ctx)
+		if *input.LabelID == "" {
+			logger.InfoContext(ctx, "note label cleared", "note_id", note.ID)
+		} else {
+			logger.InfoContext(ctx, "note label set", "note_id", note.ID, "label_id", *input.LabelID)
+		}
+	}
+	return note, nil
 }
 
 func (s *Service) Delete(ctx context.Context, id string) error {
-	return s.repo.Delete(ctx, id)
+	if err := s.repo.Delete(ctx, id); err != nil {
+		return err
+	}
+
+	reqlog.FromContext(ctx).InfoContext(ctx, "note deleted", "note_id", id)
+	return nil
 }

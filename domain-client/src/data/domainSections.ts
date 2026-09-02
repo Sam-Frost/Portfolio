@@ -1,12 +1,12 @@
 import {
-  KeyRound,
+  // KeyRound,
   FolderLock,
   ListTodo,
-  // CalendarCheck, // unused while Daily Work Tracker is disabled — see below
+  // CalendarCheck, // unused while Consistency / Daily Work Tracker are disabled — see below
   LayoutTemplate,
-  Sparkles,
+  // Sparkles,
   BookOpen,
-  // PenTool, // unused while Drawing Board is disabled — see below
+  PenTool,
   Clock,
   Dumbbell,
   StickyNote,
@@ -37,12 +37,11 @@ export const sections: Section[] = [
   { label: "Personal Diary", icon: BookOpen, enabled: true, path: "diary", group: "Personal" },
   { label: "Upskill", icon: GraduationCap, enabled: true, path: "upskill", group: "Personal" },
   { label: "Fitness", icon: Dumbbell, enabled: true, path: "fitness", group: "Personal" },
-  // Disabled for now — uncomment to bring back.
-  // { label: "Drawing Board", icon: PenTool, enabled: false, group: "Personal" },
+  { label: "Drawing Board", icon: PenTool, enabled: true, path: "drawing-board", group: "Personal" },
 
-  { label: "Claude Skills", icon: Sparkles, enabled: false, group: "System" },
+  // { label: "Claude Skills", icon: Sparkles, enabled: false, group: "System" },
   { label: "CMS", icon: LayoutTemplate, enabled: true, path: "cms", group: "System" },
-  { label: "Credential Manager", icon: KeyRound, enabled: true, path: "credentials", group: "System" },
+  // { label: "Credential Manager", icon: KeyRound, enabled: true, path: "credentials", group: "System" },
   { label: "Documents", icon: FolderLock, enabled: true, path: "documents", group: "System" },
   { label: "Settings", icon: Settings, enabled: true, path: "settings", group: "System" },
 ];
