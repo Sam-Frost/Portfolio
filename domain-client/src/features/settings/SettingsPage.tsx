@@ -4,7 +4,8 @@ import { LabelsSection } from "./LabelsSection";
 import { DocumentLabelsSection } from "./DocumentLabelsSection";
 import { NotepadLabelsSection } from "./NotepadLabelsSection";
 import { FoodLibrarySection } from "./FoodLibrarySection";
-import type { Settings, TimeLeftFormat } from "./types";
+import { NotificationSettingsSection } from "../notifications/NotificationSettingsSection";
+import type { NotificationSettings, Settings, TimeLeftFormat } from "./types";
 
 // Only sections that actually have a setting are rendered. As new
 // per-section settings are added, give them their own <section> block below
@@ -28,6 +29,7 @@ export function SettingsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [savingClock, setSavingClock] = useState(false);
+  const [savingNotifications, setSavingNotifications] = useState(false);
 
   useEffect(() => {
     fetchSettings()
@@ -45,6 +47,18 @@ export function SettingsPage() {
         .catch((err) => setError(err instanceof Error ? err.message : "Couldn't save settings."))
         .finally(() => setSavingClock(false));
       return { ...prev, timeLeftClock };
+    });
+  }
+
+  function handleNotificationsChange(patch: Partial<NotificationSettings>) {
+    setSettings((prev) => {
+      if (!prev) return prev;
+      const notifications = { ...prev.notifications, ...patch };
+      setSavingNotifications(true);
+      updateSettings({ notifications })
+        .catch((err) => setError(err instanceof Error ? err.message : "Couldn't save settings."))
+        .finally(() => setSavingNotifications(false));
+      return { ...prev, notifications };
     });
   }
 
@@ -104,6 +118,17 @@ export function SettingsPage() {
             <h2 className="text-sm font-space font-medium text-(--fg) mb-3">Fitness — Food library</h2>
             <FoodLibrarySection />
           </section>
+
+          {settings && (
+            <section className="bg-(--card) border-(--line) border-[0.5px] border-solid rounded-xl p-5">
+              <h2 className="text-sm font-space font-medium text-(--fg) mb-3">Notifications</h2>
+              <NotificationSettingsSection
+                value={settings.notifications}
+                onChange={handleNotificationsChange}
+                saving={savingNotifications}
+              />
+            </section>
+          )}
 
           {settings && (
             <section className="bg-(--card) border-(--line) border-[0.5px] border-solid rounded-xl p-5">

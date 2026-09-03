@@ -25,13 +25,18 @@ import (
 	"github.com/Sam-Frost/portfolio/internal/drawingboard"
 	"github.com/Sam-Frost/portfolio/internal/fitness"
 	"github.com/Sam-Frost/portfolio/internal/label"
+	"github.com/Sam-Frost/portfolio/internal/mailer"
 	"github.com/Sam-Frost/portfolio/internal/notepad"
 	"github.com/Sam-Frost/portfolio/internal/notepadlabel"
+	"github.com/Sam-Frost/portfolio/internal/notification"
+	"github.com/Sam-Frost/portfolio/internal/reminder"
 	"github.com/Sam-Frost/portfolio/internal/reqlog"
+	"github.com/Sam-Frost/portfolio/internal/scheduler"
 	"github.com/Sam-Frost/portfolio/internal/settings"
 	"github.com/Sam-Frost/portfolio/internal/spotify"
 	"github.com/Sam-Frost/portfolio/internal/todo"
 	"github.com/Sam-Frost/portfolio/internal/upskill"
+	"github.com/Sam-Frost/portfolio/internal/workprofile"
 	"github.com/Sam-Frost/portfolio/internal/worksession"
 )
 
@@ -72,6 +77,10 @@ var publicPaths = map[string]bool{
 	"/health":               true,
 	"/api/auth/login":       true,
 	"/api/spotify/callback": true,
+	// The service worker's pushsubscriptionchange handler re-registers a
+	// rotated Web Push subscription with no bearer token available — see
+	// notification.Handler.resync.
+	"/api/notifications/subscriptions/sync": true,
 }
 
 // withAuth gates every route except publicPaths behind auth.RequireAuth.
@@ -113,8 +122,13 @@ func newRouter(
 	documentBlob document.BlobStore,
 	diaryVideoRepo diary.VideoRepository,
 	diaryVideoBlob blobstore.Store,
+	notificationRepo notification.Repository,
+	reminderRepo reminder.Repository,
+	workProfileRepo workprofile.Repository,
+	mail mailer.Mailer,
+	vapid notification.VAPIDConfig,
 	spotifyClientID, spotifyClientSecret, spotifyRedirectURI, spotifyFrontendURL, jwtSecret string,
-) *http.ServeMux {
+) (*http.ServeMux, *scheduler.Scheduler) {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/health", healthCheck)
 
@@ -128,6 +142,28 @@ func newRouter(
 
 	settingsService := settings.NewService(settingsRepo)
 	settings.NewHandler(settingsService).Register(mux)
+
+	var pushSender notification.PushSender
+	if vapid.PublicKey != "" {
+		pushSender = notification.NewWebPushSender(vapid)
+	} else {
+		pushSender = notification.NewNoopPushSender()
+	}
+	notificationService := notification.NewService(notificationRepo, pushSender, mail, settingsService)
+	notification.NewHandler(notificationService).Register(mux)
+
+	reminderService := reminder.NewService(reminderRepo)
+	reminder.NewHandler(reminderService).Register(mux)
+
+	workProfileService := workprofile.NewService(workProfileRepo)
+	workprofile.NewHandler(workProfileService).Register(mux)
+
+	sched := scheduler.New(scheduler.Deps{
+		Notifications: notificationService,
+		Todos:         todoService,
+		Settings:      settingsService,
+		Reminders:     reminderService,
+	})
 
 	notepadService := notepad.NewService(notepadRepo)
 	notepad.NewHandler(notepadService).Register(mux)
@@ -169,7 +205,48 @@ func newRouter(
 	documentService := document.NewService(documentRepo, documentBlob)
 	document.NewHandler(documentService).Register(mux)
 
-	return mux
+	return mux, sched
+}
+
+// newMailer builds the outbound-email sender from SMTP_* env. Unset
+// SMTP_USERNAME ⇒ a no-op mailer (local dev / no-credentials deploy), the
+// same "unconfigured is fine" pattern as newCMSPublisher.
+//
+//	SMTP_USERNAME / SMTP_PASSWORD  Gmail address + app password (required to enable)
+//	SMTP_FROM                      From header; defaults to SMTP_USERNAME
+//	SMTP_HOST / SMTP_PORT          default smtp.gmail.com / 587
+func newMailer() mailer.Mailer {
+	username := os.Getenv("SMTP_USERNAME")
+	if username == "" {
+		log.Println("SMTP_USERNAME not set — outbound email is disabled")
+		return mailer.NewNoopMailer()
+	}
+	log.Printf("outbound email enabled → %s via %s", username, envOr("SMTP_HOST", "smtp.gmail.com"))
+	return mailer.NewSMTPMailer(mailer.SMTPConfig{
+		Host:     os.Getenv("SMTP_HOST"),
+		Port:     os.Getenv("SMTP_PORT"),
+		Username: username,
+		Password: os.Getenv("SMTP_PASSWORD"),
+		From:     os.Getenv("SMTP_FROM"),
+	})
+}
+
+// newVAPIDConfig reads the Web Push signing keys from env. Unset
+// VAPID_PUBLIC_KEY ⇒ a zero config, which makes newRouter pick the no-op
+// push sender and the client treat push as unavailable. Generate a keypair
+// with `go run ./scripts/genvapid`.
+func newVAPIDConfig() notification.VAPIDConfig {
+	pub := os.Getenv("VAPID_PUBLIC_KEY")
+	if pub == "" {
+		log.Println("VAPID_PUBLIC_KEY not set — Web Push is disabled")
+		return notification.VAPIDConfig{}
+	}
+	log.Println("Web Push enabled")
+	return notification.VAPIDConfig{
+		PublicKey:  pub,
+		PrivateKey: os.Getenv("VAPID_PRIVATE_KEY"),
+		Subject:    envOr("VAPID_SUBJECT", "mailto:admin@sat0ru.dev"),
+	}
 }
 
 // newCMSPublisher builds the publisher the CMS Publish button uses. With no
@@ -353,14 +430,23 @@ func main() {
 	documentLabelRepo := documentlabel.NewPostgresRepository(sqlDB)
 	documentBlob := newDocumentBlobStore(context.Background(), jwtSecret)
 	diaryVideoBlob := newDiaryVideoBlobStore(context.Background(), jwtSecret)
+	notificationRepo := notification.NewPostgresRepository(sqlDB)
+	reminderRepo := reminder.NewPostgresRepository(sqlDB)
+	workProfileRepo := workprofile.NewPostgresRepository(sqlDB)
+	mail := newMailer()
+	vapid := newVAPIDConfig()
 
-	router := newRouter(
+	router, sched := newRouter(
 		authService, todoRepo, labelRepo, settingsRepo, notepadRepo, notepadLabelRepo, drawingBoardRepo, upskillRepo, diaryRepo,
 		fitnessRepo, spotifyRepo, workSessionRepo, cmsRepo, cmsPublisher,
 		documentRepo, documentLabelRepo, documentBlob,
 		diaryVideoRepo, diaryVideoBlob,
+		notificationRepo, reminderRepo, workProfileRepo, mail, vapid,
 		spotifyClientID, spotifyClientSecret, spotifyRedirectURI, spotifyFrontendURL, jwtSecret,
 	)
+
+	schedCtx, schedCancel := context.WithCancel(context.Background())
+	go sched.Run(schedCtx)
 
 	port := os.Getenv("PORT")
 	if port == "" {
@@ -390,6 +476,7 @@ func main() {
 	<-stop
 
 	slog.Info("shutting down")
+	schedCancel()
 	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer shutdownCancel()
 	if err := srv.Shutdown(shutdownCtx); err != nil {

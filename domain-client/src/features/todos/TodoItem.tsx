@@ -1,8 +1,9 @@
-import { Check, Undo2 } from "lucide-react";
+import { Bell, Check, Undo2 } from "lucide-react";
 import { useState } from "react";
 import { LABEL_COLOR_VAR } from "../labels/colors";
 import type { Label } from "../labels/types";
 import { EditTodoDialog } from "./EditTodoDialog";
+import { ReminderDialog } from "./reminders/ReminderDialog";
 import type { Todo } from "./types";
 
 interface TodoItemProps {
@@ -26,6 +27,7 @@ function formatDateShort(value: string) {
 
 export function TodoItem({ todo, labels, onMarkDone, onUndo, onUpdate }: TodoItemProps) {
   const [editing, setEditing] = useState(false);
+  const [remindering, setRemindering] = useState(false);
   const label = labels.find((l) => l.id === todo.labelId) ?? null;
 
   return (
@@ -56,6 +58,17 @@ export function TodoItem({ todo, labels, onMarkDone, onUndo, onUpdate }: TodoIte
             <span className="size-1.5 rounded-full shrink-0" style={{ backgroundColor: LABEL_COLOR_VAR[label.color] }} />
             <span className="truncate">{label.name}</span>
           </span>
+        )}
+
+        {!todo.done && (
+          <button
+            onClick={() => setRemindering(true)}
+            aria-label="Reminders"
+            title="Reminders"
+            className="shrink-0 flex items-center justify-center size-6 sm:size-5 rounded-md text-(--text-faint) hover:text-(--fg) hover:bg-(--card-alt) transition-colors cursor-pointer"
+          >
+            <Bell size={12} />
+          </button>
         )}
 
         {todo.done ? (
@@ -112,6 +125,8 @@ export function TodoItem({ todo, labels, onMarkDone, onUndo, onUpdate }: TodoIte
           }}
         />
       )}
+
+      {remindering && <ReminderDialog todo={todo} onClose={() => setRemindering(false)} />}
     </div>
   );
 }

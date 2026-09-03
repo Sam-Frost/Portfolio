@@ -7,6 +7,7 @@ import { DomainLayout } from "./layouts/DomainLayout";
 import { RequireAuth } from "./features/auth/RequireAuth";
 import { CredentialManagerPage } from "./features/credentials/CredentialManagerPage";
 import { TodosPage } from "./features/todos/TodosPage";
+import { WorkProfilePage } from "./features/work-profile/WorkProfilePage";
 import { SettingsPage } from "./features/settings/SettingsPage";
 import { NotepadPage } from "./features/notepad/NotepadPage";
 import { NoteEditorPage } from "./features/notepad/NoteEditorPage";
@@ -42,6 +43,11 @@ const routes: RouteObject[] = [
             path: "todos",
             element: <TodosPage />,
             handle: { title: "Todos", fullWidth: true },
+          },
+          {
+            path: "work",
+            element: <WorkProfilePage />,
+            handle: { title: "Work Profile", fullWidth: true },
           },
           {
             path: "upskill",

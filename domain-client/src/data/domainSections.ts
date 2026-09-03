@@ -4,6 +4,7 @@ import {
   ListTodo,
   // CalendarCheck, // unused while Consistency / Daily Work Tracker are disabled — see below
   LayoutTemplate,
+  Briefcase,
   // Sparkles,
   BookOpen,
   PenTool,
@@ -28,6 +29,7 @@ export type Section =
 // `group` controls which sidebar section (see SECTION_GROUPS) an item sits in.
 export const sections: Section[] = [
   { label: "Todos", icon: ListTodo, enabled: true, path: "todos", group: "Productivity" },
+  { label: "Work Profile", icon: Briefcase, enabled: true, path: "work", group: "Productivity" },
   { label: "Notepad", icon: StickyNote, enabled: true, path: "notepad", group: "Productivity" },
   { label: "Sessions", icon: Clock, enabled: true, path: "hourly-tracker", group: "Productivity" },
   // Disabled for now — uncomment to bring back.

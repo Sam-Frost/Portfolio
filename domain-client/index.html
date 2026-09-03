@@ -3,10 +3,18 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/jpeg" href="/src/assets/images/gojo.jpg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <!-- Pin the mobile browser chrome (iOS status-bar / Android toolbar) to the
          app's dark background so the safe-area doesn't render white. -->
     <meta name="theme-color" content="#0E0E0E" />
+    <!-- Installed-PWA plumbing. Web Push on iOS only works from the
+         Home-Screen app, which needs the manifest + these Apple meta tags. -->
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Domain" />
     <title>Domain Expansion</title>
   </head>
   <body>

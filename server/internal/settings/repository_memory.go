@@ -11,7 +11,10 @@ type MemoryRepository struct {
 }
 
 func NewMemoryRepository() *MemoryRepository {
-	return &MemoryRepository{settings: Settings{TimeLeftClock: TimeLeftClock{Format: FormatWeeksDaysTime}}}
+	return &MemoryRepository{settings: Settings{
+		TimeLeftClock: TimeLeftClock{Format: FormatWeeksDaysTime},
+		Notifications: Notifications{MorningTime: "07:00", EmailEnabled: true, PushEnabled: true},
+	}}
 }
 
 func (r *MemoryRepository) Get(_ context.Context) (Settings, error) {
@@ -31,6 +34,15 @@ func (r *MemoryRepository) Update(_ context.Context, input UpdateInput) (Setting
 	if input.TimeLeftClock != nil {
 		r.settings.TimeLeftClock.GoalDate = input.TimeLeftClock.GoalDate
 		r.settings.TimeLeftClock.Format = input.TimeLeftClock.Format
+	}
+
+	if input.Notifications != nil {
+		r.settings.Notifications = Notifications{
+			RecipientEmail: input.Notifications.RecipientEmail,
+			MorningTime:    input.Notifications.MorningTime,
+			EmailEnabled:   input.Notifications.EmailEnabled,
+			PushEnabled:    input.Notifications.PushEnabled,
+		}
 	}
 
 	return r.settings, nil

@@ -23,8 +23,22 @@ Settings {
   dailyWorkTracker: {
     totalWorkHoursRequired: number | null   // hours/day, e.g. 8; null = not set
   }
+  timeLeftClock: {
+    goalDate: string | null                 // RFC3339; null = not set
+    format: "weeks_days_time" | "days_time"
+  }
+  notifications: {
+    recipientEmail: string | null           // where email notifications go; null = not set
+    morningTime: string                     // local IST "HH:MM" for the daily digest (default "07:00")
+    emailEnabled: boolean                    // default true
+    pushEnabled: boolean                     // default true
+  }
 }
 ```
+
+A `PATCH` may send any subset of the top-level sections; a section that's present replaces that
+whole section (the fields within it are not individually optional). `notifications.recipientEmail`
+sent as `null` or `""` clears it. See `docs/notifications-api.md` for how these drive delivery.
 
 - `totalWorkHoursRequired` is optional and defaults to `null` (unset) until the user configures it
   on the Settings page.
