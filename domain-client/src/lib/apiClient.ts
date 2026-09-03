@@ -57,6 +57,12 @@ export async function apiRequest<T>(path: string, init?: RequestInit): Promise<T
     throw new ApiError(await messageFromResponse(res, method, path), res.status);
   }
 
-  if (res.status === 204) return undefined as T;
-  return res.json() as Promise<T>;
+  // Any empty body (204, or a 200/202 that just acknowledges) — parsing it as
+  // JSON throws in Safari with a famously unhelpful "The string did not match
+  // the expected pattern", so read text first and only parse when there's
+  // something to parse.
+  if (res.status === 204 || res.status === 205) return undefined as T;
+  const text = await res.text();
+  if (!text) return undefined as T;
+  return JSON.parse(text) as T;
 }

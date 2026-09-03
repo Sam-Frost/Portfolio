@@ -234,18 +234,29 @@ func newMailer() mailer.Mailer {
 // newVAPIDConfig reads the Web Push signing keys from env. Unset
 // VAPID_PUBLIC_KEY ⇒ a zero config, which makes newRouter pick the no-op
 // push sender and the client treat push as unavailable. Generate a keypair
-// with `go run ./scripts/genvapid`.
+// with `go run ./scripts/genvapid/main.go`.
+//
+// VAPID_SUBJECT must be an https: URL: Apple's Web Push service rejects a
+// mailto: subject with 403 BadJwtToken (the spec allows both, Apple does
+// not), so the default and any mailto: override are coerced to https.
 func newVAPIDConfig() notification.VAPIDConfig {
 	pub := os.Getenv("VAPID_PUBLIC_KEY")
 	if pub == "" {
 		log.Println("VAPID_PUBLIC_KEY not set — Web Push is disabled")
 		return notification.VAPIDConfig{}
 	}
-	log.Println("Web Push enabled")
+
+	subject := envOr("VAPID_SUBJECT", "https://sat0ru.dev")
+	if strings.HasPrefix(subject, "mailto:") {
+		log.Printf("VAPID_SUBJECT %q is a mailto: URI — Apple Web Push rejects those; using https://sat0ru.dev instead", subject)
+		subject = "https://sat0ru.dev"
+	}
+
+	log.Printf("Web Push enabled (subject %s)", subject)
 	return notification.VAPIDConfig{
 		PublicKey:  pub,
 		PrivateKey: os.Getenv("VAPID_PRIVATE_KEY"),
-		Subject:    envOr("VAPID_SUBJECT", "mailto:admin@sat0ru.dev"),
+		Subject:    subject,
 	}
 }
 

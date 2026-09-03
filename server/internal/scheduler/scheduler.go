@@ -88,6 +88,13 @@ func (s *Scheduler) Run(ctx context.Context) {
 }
 
 func (s *Scheduler) tick(ctx context.Context, now time.Time) {
+	// A panic in one job must not kill the goroutine — that would silently
+	// stop every future digest and reminder until the process restarts.
+	defer func() {
+		if r := recover(); r != nil {
+			slog.Error("scheduler: tick panicked", "recover", r)
+		}
+	}()
 	s.maybeSendMorningDigest(ctx, now)
 	s.fireDueReminders(ctx, now)
 }
@@ -101,6 +108,10 @@ func (s *Scheduler) fireDueReminders(ctx context.Context, now time.Time) {
 	if err != nil {
 		slog.Error("scheduler: query due reminders failed", "err", err)
 		return
+	}
+
+	if len(due) > 0 {
+		slog.Info("scheduler: firing due reminders", "count", len(due))
 	}
 
 	for _, d := range due {

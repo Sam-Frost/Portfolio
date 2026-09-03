@@ -102,26 +102,44 @@ func (s *Service) Notify(ctx context.Context, m Message) error {
 		return err
 	}
 
+	emailed := false
 	if cfg.Notifications.EmailEnabled && cfg.Notifications.RecipientEmail != nil && *cfg.Notifications.RecipientEmail != "" {
 		if err := s.mail.Send(ctx, []string{*cfg.Notifications.RecipientEmail}, m.Title, emailHTML(m), emailText(m)); err != nil {
 			slog.Error("notification: email send failed", "err", err)
+		} else {
+			emailed = true
 		}
 	}
 
+	pushed := 0
 	if cfg.Notifications.PushEnabled {
-		s.pushAll(ctx, m)
+		pushed = s.pushAll(ctx, m)
 	}
+
+	// One line per notification so it's obvious in prod logs whether a
+	// channel actually did anything (vs. "fired" but nothing configured).
+	slog.Info("notification dispatched",
+		"title", m.Title,
+		"emailed", emailed,
+		"pushed", pushed,
+		"emailEnabled", cfg.Notifications.EmailEnabled,
+		"hasRecipient", cfg.Notifications.RecipientEmail != nil && *cfg.Notifications.RecipientEmail != "",
+		"pushEnabled", cfg.Notifications.PushEnabled,
+	)
 
 	return nil
 }
 
-func (s *Service) pushAll(ctx context.Context, m Message) {
+// pushAll delivers m to every subscription and returns how many were sent
+// successfully.
+func (s *Service) pushAll(ctx context.Context, m Message) int {
 	subs, err := s.repo.ListSubscriptions(ctx)
 	if err != nil {
 		slog.Error("notification: list subscriptions failed", "err", err)
-		return
+		return 0
 	}
 
+	sent := 0
 	payload := encodePushPayload(m)
 	for _, sub := range subs {
 		res := s.push.Send(ctx, sub, payload)
@@ -132,8 +150,11 @@ func (s *Service) pushAll(ctx context.Context, m Message) {
 			}
 		case res.Err != nil:
 			slog.Error("notification: web push failed", "endpoint", res.Endpoint, "err", res.Err)
+		default:
+			sent++
 		}
 	}
+	return sent
 }
 
 func emailText(m Message) string {

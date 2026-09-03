@@ -79,5 +79,7 @@ func (h *Handler) test(w http.ResponseWriter, r *http.Request) {
 		httpx.WriteError(w, err)
 		return
 	}
-	w.WriteHeader(http.StatusAccepted)
+	// SendTest dispatches synchronously, so 204 (not 202) — and an empty
+	// body the client won't try to JSON-parse.
+	w.WriteHeader(http.StatusNoContent)
 }

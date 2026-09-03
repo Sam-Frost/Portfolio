@@ -27,5 +27,6 @@ dist-ssr
 server-config.md
 server/backups/
 server/.data/
+serve/domain
 scripts/deploy-friend.env
 .claude/worktrees/

@@ -3,8 +3,10 @@ package notification
 import (
 	"context"
 	"encoding/json"
+	"io"
 	"log/slog"
 	"net/http"
+	"strings"
 
 	webpush "github.com/SherClockHolmes/webpush-go"
 )
@@ -61,15 +63,28 @@ func (s *webPushSender) Send(ctx context.Context, sub PushSubscription, payload 
 	case resp.StatusCode == http.StatusNotFound || resp.StatusCode == http.StatusGone:
 		return pushResult{Endpoint: sub.Endpoint, Gone: true}
 	case resp.StatusCode >= 300:
-		return pushResult{Endpoint: sub.Endpoint, Err: &pushStatusError{resp.StatusCode}}
+		// Keep the push service's own explanation — Apple/FCM put the real
+		// reason in the body (e.g. {"reason":"BadJwtToken"} when the VAPID
+		// subject isn't an https: URL), which "403 Forbidden" alone hides.
+		body, _ := io.ReadAll(io.LimitReader(resp.Body, 512))
+		return pushResult{Endpoint: sub.Endpoint, Err: &pushStatusError{resp.StatusCode, strings.TrimSpace(string(body))}}
 	default:
 		return pushResult{Endpoint: sub.Endpoint}
 	}
 }
 
-type pushStatusError struct{ code int }
+type pushStatusError struct {
+	code int
+	body string
+}
 
-func (e *pushStatusError) Error() string { return "web push rejected: HTTP " + http.StatusText(e.code) }
+func (e *pushStatusError) Error() string {
+	msg := "web push rejected: HTTP " + http.StatusText(e.code)
+	if e.body != "" {
+		msg += " — " + e.body
+	}
+	return msg
+}
 
 // noopPushSender logs and drops. Selected when VAPID isn't configured.
 type noopPushSender struct{}
